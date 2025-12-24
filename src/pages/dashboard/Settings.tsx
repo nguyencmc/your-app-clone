@@ -4,18 +4,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
-import { Menu, User as UserIcon, Bell, Shield, Palette, Globe, CreditCard } from "lucide-react";
+import { Menu, User as UserIcon, Bell, Shield, Palette, Globe, CreditCard, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { useProfile } from "@/hooks/useProfile";
+import { useToast } from "@/hooks/use-toast";
 
 const Settings = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState("profile");
+  const [fullName, setFullName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  const { profile, isLoading: profileLoading, updateProfile } = useProfile();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -41,6 +49,48 @@ const Settings = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  useEffect(() => {
+    if (profile) {
+      setFullName(profile.full_name || "");
+    }
+  }, [profile]);
+
+  const handleSaveProfile = async () => {
+    setIsSaving(true);
+    try {
+      await updateProfile({ full_name: fullName });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleToggleNotification = async (key: "email_notifications" | "student_submission_notifications" | "marketing_emails") => {
+    if (!profile) return;
+    await updateProfile({ [key]: !profile[key] });
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!confirm("Are you sure you want to delete your account? This action cannot be undone.")) return;
+    
+    try {
+      const { error } = await supabase.auth.admin.deleteUser(user?.id || "");
+      if (error) throw error;
+      
+      await supabase.auth.signOut();
+      navigate("/");
+      toast({
+        title: "Account Deleted",
+        description: "Your account has been deleted successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete account. Please contact support.",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -49,15 +99,15 @@ const Settings = () => {
     );
   }
 
-  const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
+  const userName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
 
   const settingSections = [
-    { icon: UserIcon, label: "Profile", active: true },
-    { icon: Bell, label: "Notifications" },
-    { icon: Shield, label: "Security" },
-    { icon: Palette, label: "Appearance" },
-    { icon: Globe, label: "Language" },
-    { icon: CreditCard, label: "Billing" },
+    { id: "profile", icon: UserIcon, label: "Profile" },
+    { id: "notifications", icon: Bell, label: "Notifications" },
+    { id: "security", icon: Shield, label: "Security" },
+    { id: "appearance", icon: Palette, label: "Appearance" },
+    { id: "language", icon: Globe, label: "Language" },
+    { id: "billing", icon: CreditCard, label: "Billing" },
   ];
 
   return (
@@ -92,11 +142,12 @@ const Settings = () => {
               <Card className="glass-card lg:col-span-1 h-fit">
                 <CardContent className="p-4">
                   <nav className="space-y-1">
-                    {settingSections.map((section, index) => (
+                    {settingSections.map((section) => (
                       <button
-                        key={index}
+                        key={section.id}
+                        onClick={() => setActiveSection(section.id)}
                         className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm transition-colors ${
-                          section.active 
+                          activeSection === section.id 
                             ? "bg-primary/10 text-primary" 
                             : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                         }`}
@@ -118,24 +169,45 @@ const Settings = () => {
                     <CardDescription>Update your personal information</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
-                        <UserIcon className="w-8 h-8 text-primary" />
+                    {profileLoading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
                       </div>
-                      <Button variant="outline" size="sm">Change Avatar</Button>
-                    </div>
-                    <Separator />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">Full Name</Label>
-                        <Input id="name" defaultValue={userName} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input id="email" type="email" defaultValue={user?.email || ""} disabled />
-                      </div>
-                    </div>
-                    <Button>Save Changes</Button>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-4">
+                          <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
+                            <UserIcon className="w-8 h-8 text-primary" />
+                          </div>
+                          <Button variant="outline" size="sm">Change Avatar</Button>
+                        </div>
+                        <Separator />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="name">Full Name</Label>
+                            <Input
+                              id="name"
+                              value={fullName}
+                              onChange={(e) => setFullName(e.target.value)}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="email">Email</Label>
+                            <Input id="email" type="email" defaultValue={user?.email || ""} disabled />
+                          </div>
+                        </div>
+                        <Button onClick={handleSaveProfile} disabled={isSaving}>
+                          {isSaving ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Saving...
+                            </>
+                          ) : (
+                            "Save Changes"
+                          )}
+                        </Button>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
 
@@ -151,7 +223,10 @@ const Settings = () => {
                         <p className="font-medium text-foreground">Email Notifications</p>
                         <p className="text-sm text-muted-foreground">Receive exam updates via email</p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch
+                        checked={profile?.email_notifications ?? true}
+                        onCheckedChange={() => handleToggleNotification("email_notifications")}
+                      />
                     </div>
                     <Separator />
                     <div className="flex items-center justify-between">
@@ -159,7 +234,10 @@ const Settings = () => {
                         <p className="font-medium text-foreground">Student Submissions</p>
                         <p className="text-sm text-muted-foreground">Get notified when students submit exams</p>
                       </div>
-                      <Switch defaultChecked />
+                      <Switch
+                        checked={profile?.student_submission_notifications ?? true}
+                        onCheckedChange={() => handleToggleNotification("student_submission_notifications")}
+                      />
                     </div>
                     <Separator />
                     <div className="flex items-center justify-between">
@@ -167,7 +245,10 @@ const Settings = () => {
                         <p className="font-medium text-foreground">Marketing Emails</p>
                         <p className="text-sm text-muted-foreground">Receive tips and product updates</p>
                       </div>
-                      <Switch />
+                      <Switch
+                        checked={profile?.marketing_emails ?? false}
+                        onCheckedChange={() => handleToggleNotification("marketing_emails")}
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -179,7 +260,7 @@ const Settings = () => {
                     <CardDescription>Irreversible account actions</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Button variant="destructive">Delete Account</Button>
+                    <Button variant="destructive" onClick={handleDeleteAccount}>Delete Account</Button>
                   </CardContent>
                 </Card>
               </div>
