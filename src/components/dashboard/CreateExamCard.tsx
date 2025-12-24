@@ -1,7 +1,10 @@
 import { Sparkles } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const CreateExamCard = () => {
+  const navigate = useNavigate();
+  
   return (
     <div className="bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/20 rounded-xl p-6 relative overflow-hidden">
       {/* Background glow */}
@@ -12,7 +15,10 @@ const CreateExamCard = () => {
         <p className="text-sm text-muted-foreground mb-4 max-w-md">
           Take a leap and create an exam with AI. It's fast, easy, and powerful.
         </p>
-        <Button className="bg-background/80 hover:bg-background text-foreground">
+        <Button 
+          onClick={() => navigate("/create-exam")}
+          className="bg-background/80 hover:bg-background text-foreground"
+        >
           Create Exam
           <Sparkles className="w-4 h-4 ml-2 text-primary" />
         </Button>
