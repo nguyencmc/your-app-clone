@@ -52,8 +52,10 @@ export default function CreateExam() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     examTitle: "",
@@ -70,6 +72,8 @@ export default function CreateExam() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         navigate("/auth");
+      } else {
+        setUserId(session.user.id);
       }
     };
     checkAuth();
@@ -132,12 +136,60 @@ export default function CreateExam() {
     }
   };
 
-  const handleSaveExam = () => {
-    toast({
-      title: "Exam Saved!",
-      description: "Your exam has been saved successfully.",
-    });
-    navigate("/dashboard");
+  const handleSaveExam = async () => {
+    if (!userId) {
+      toast({
+        title: "Not Authenticated",
+        description: "Please log in to save exams.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (questions.length === 0) {
+      toast({
+        title: "No Questions",
+        description: "Please generate questions before saving.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    
+    try {
+      const examTitle = formData.examTitle || `${formData.subject} Exam`;
+      
+      const { error } = await supabase
+        .from("exams")
+        .insert([{
+          user_id: userId,
+          title: examTitle,
+          subject: formData.subject,
+          difficulty: formData.difficulty,
+          question_type: formData.questionType,
+          time_limit: parseInt(formData.timeLimit),
+          questions: JSON.parse(JSON.stringify(questions)),
+          question_count: questions.length,
+        }]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Exam Saved!",
+        description: "Your exam has been saved successfully.",
+      });
+      navigate("/dashboard");
+    } catch (error) {
+      console.error("Error saving exam:", error);
+      toast({
+        title: "Save Failed",
+        description: "Failed to save exam. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -430,8 +482,8 @@ export default function CreateExam() {
                 >
                   Regenerate
                 </Button>
-                <Button className="flex-1" onClick={handleSaveExam}>
-                  Save Exam
+                <Button className="flex-1" onClick={handleSaveExam} disabled={isSaving}>
+                  {isSaving ? "Saving..." : "Save Exam"}
                 </Button>
               </div>
             )}
