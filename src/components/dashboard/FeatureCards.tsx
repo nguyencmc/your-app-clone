@@ -48,7 +48,7 @@ const featureCards = [
     description: "Upload and manage course materials",
     color: "from-orange-500/20 to-orange-500/5",
     borderColor: "hover:border-orange-500/30",
-    fileTypes: ["PDF", "DOC", "PPT"],
+    fileTypes: ["PDF", "DOC", "PPT", "IMG"],
   },
   {
     title: "Tutorials",
