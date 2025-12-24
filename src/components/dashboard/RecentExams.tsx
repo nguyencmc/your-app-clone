@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { FileText, MoreVertical, Trash2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +25,7 @@ const RecentExams = () => {
   const [exams, setExams] = useState<Exam[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchExams();
@@ -66,6 +68,10 @@ const RecentExams = () => {
     }
   };
 
+  const handleView = (id: string) => {
+    navigate(`/exam/${id}`);
+  };
+
   if (isLoading) {
     return (
       <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-xl p-6">
@@ -101,7 +107,8 @@ const RecentExams = () => {
           {exams.map((exam) => (
             <div
               key={exam.id}
-              className="flex items-center justify-between p-3 bg-secondary/30 hover:bg-secondary/50 rounded-lg transition-colors group"
+              className="flex items-center justify-between p-3 bg-secondary/30 hover:bg-secondary/50 rounded-lg transition-colors group cursor-pointer"
+              onClick={() => handleView(exam.id)}
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -121,19 +128,19 @@ const RecentExams = () => {
                   <p className="text-xs text-muted-foreground capitalize">{exam.difficulty}</p>
                 </div>
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
                       <MoreVertical className="w-4 h-4 text-muted-foreground" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem className="gap-2">
+                    <DropdownMenuItem className="gap-2" onClick={(e) => { e.stopPropagation(); handleView(exam.id); }}>
                       <Eye className="w-4 h-4" />
                       View
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       className="gap-2 text-destructive focus:text-destructive"
-                      onClick={() => handleDelete(exam.id)}
+                      onClick={(e) => { e.stopPropagation(); handleDelete(exam.id); }}
                     >
                       <Trash2 className="w-4 h-4" />
                       Delete
