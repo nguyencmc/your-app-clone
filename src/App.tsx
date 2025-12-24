@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import CreateExam from "./pages/CreateExam";
 import ExamDetail from "./pages/ExamDetail";
+import TakeExam from "./pages/TakeExam";
 import Pricing from "./pages/Pricing";
 import Playground from "./pages/dashboard/Playground";
 import Documentation from "./pages/dashboard/Documentation";
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/dashboard/settings" element={<Settings />} />
           <Route path="/create-exam" element={<CreateExam />} />
           <Route path="/exam/:id" element={<ExamDetail />} />
+          <Route path="/exam/:id/take" element={<TakeExam />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

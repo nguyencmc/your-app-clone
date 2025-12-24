@@ -17,7 +17,8 @@ import {
   Clock,
   Pencil,
   Eye,
-  GripVertical
+  GripVertical,
+  Play
 } from "lucide-react";
 import {
   AlertDialog,
@@ -268,10 +269,16 @@ export default function ExamDetail() {
                 </Button>
               </>
             ) : (
-              <Button onClick={() => setIsEditing(true)}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit Exam
-              </Button>
+              <>
+                <Button variant="outline" onClick={() => navigate(`/exam/${id}/take`)}>
+                  <Play className="mr-2 h-4 w-4" />
+                  Take Exam
+                </Button>
+                <Button onClick={() => setIsEditing(true)}>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit Exam
+                </Button>
+              </>
             )}
           </div>
         </div>
