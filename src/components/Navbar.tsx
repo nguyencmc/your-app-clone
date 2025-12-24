@@ -146,11 +146,11 @@ const Navbar = () => {
 
           {/* Auth Buttons */}
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" className="hidden md:inline-flex text-muted-foreground hover:text-foreground">
-              Log in
+            <Button variant="ghost" size="sm" className="hidden md:inline-flex text-muted-foreground hover:text-foreground" asChild>
+              <Link to="/auth">Log in</Link>
             </Button>
-            <Button variant="navCta" size="sm">
-              Sign up
+            <Button variant="navCta" size="sm" asChild>
+              <Link to="/auth">Sign up</Link>
             </Button>
           </div>
         </nav>
