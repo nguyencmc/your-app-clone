@@ -95,7 +95,7 @@ const Navbar = () => {
 
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
-                  <Link to="#pricing" className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <Link to="/pricing" className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
                     <DollarSign className="w-4 h-4" />
                     Pricing
                   </Link>
