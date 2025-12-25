@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
-import { Menu, User as UserIcon, Bell, Shield, Palette, Globe, CreditCard, Loader2 } from "lucide-react";
+import { Menu, User as UserIcon, Bell, Shield, Palette, Globe, CreditCard, Loader2, Camera } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,8 @@ const Settings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const { profile, isLoading: profileLoading, updateProfile } = useProfile();
+  const { profile, isLoading: profileLoading, updateProfile, uploadAvatar } = useProfile();
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -176,10 +177,56 @@ const Settings = () => {
                     ) : (
                       <>
                         <div className="flex items-center gap-4">
-                          <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
-                            <UserIcon className="w-8 h-8 text-primary" />
+                          <div className="relative group">
+                            {profile?.avatar_url ? (
+                              <img 
+                                src={profile.avatar_url} 
+                                alt="Avatar" 
+                                className="w-16 h-16 rounded-full object-cover border-2 border-primary/20"
+                              />
+                            ) : (
+                              <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
+                                <UserIcon className="w-8 h-8 text-primary" />
+                              </div>
+                            )}
+                            <label 
+                              htmlFor="avatar-upload" 
+                              className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                            >
+                              {isUploading ? (
+                                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                              ) : (
+                                <Camera className="w-5 h-5 text-primary" />
+                              )}
+                            </label>
+                            <input
+                              id="avatar-upload"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              disabled={isUploading}
+                              onChange={async (e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                setIsUploading(true);
+                                try {
+                                  await uploadAvatar(file);
+                                } finally {
+                                  setIsUploading(false);
+                                }
+                              }}
+                            />
                           </div>
-                          <Button variant="outline" size="sm">Change Avatar</Button>
+                          <div>
+                            <label htmlFor="avatar-upload">
+                              <Button variant="outline" size="sm" asChild disabled={isUploading}>
+                                <span className="cursor-pointer">
+                                  {isUploading ? "Uploading..." : "Change Avatar"}
+                                </span>
+                              </Button>
+                            </label>
+                            <p className="text-xs text-muted-foreground mt-1">JPG, PNG or GIF. Max 2MB</p>
+                          </div>
                         </div>
                         <Separator />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
