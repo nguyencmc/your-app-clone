@@ -78,14 +78,34 @@ Only return valid JSON, no additional text.`;
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content;
     
+    if (!content) {
+      console.error("No content in AI response:", data);
+      throw new Error("No content in AI response");
+    }
+
     // Parse the JSON from the response
     let questions;
     try {
-      // Remove markdown code blocks if present
-      const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      // Remove markdown code blocks if present (handle various formats)
+      let cleanContent = content.trim();
+      
+      // Remove ```json or ``` at the start
+      if (cleanContent.startsWith('```')) {
+        cleanContent = cleanContent.replace(/^```(?:json)?\s*\n?/, '');
+      }
+      
+      // Remove ``` at the end
+      if (cleanContent.endsWith('```')) {
+        cleanContent = cleanContent.replace(/\n?```\s*$/, '');
+      }
+      
+      cleanContent = cleanContent.trim();
+      console.log("Cleaned content for parsing:", cleanContent.substring(0, 200) + "...");
+      
       questions = JSON.parse(cleanContent);
     } catch (parseError) {
-      console.error("Failed to parse AI response:", content);
+      console.error("Failed to parse AI response. Raw content:", content);
+      console.error("Parse error:", parseError);
       throw new Error("Failed to parse generated questions");
     }
 
