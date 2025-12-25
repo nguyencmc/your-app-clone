@@ -23,20 +23,23 @@ interface QuestionPreviewProps {
   onClose: () => void;
   onQuestionsUpdate?: (questions: Question[]) => void;
   editable?: boolean;
+  questionType?: string;
 }
 
 export default function QuestionPreview({ 
   questions, 
   onClose, 
   onQuestionsUpdate,
-  editable = true 
+  editable = true,
+  questionType = 'multiple choice'
 }: QuestionPreviewProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isAddingNew, setIsAddingNew] = useState(false);
   const [editedQuestion, setEditedQuestion] = useState<Question | null>(null);
 
-  const currentQuestion = questions[currentIndex];
+  
 
   const goNext = () => {
     if (currentIndex < questions.length - 1) {
@@ -63,21 +66,52 @@ export default function QuestionPreview({
   const startEditing = () => {
     setEditedQuestion({ ...currentQuestion });
     setIsEditing(true);
+    setIsAddingNew(false);
+  };
+
+  const startAddingNew = () => {
+    const newQuestion: Question = {
+      id: questions.length + 1,
+      question: '',
+      type: questionType,
+      options: questionType === 'multiple choice' ? ['A. ', 'B. ', 'C. ', 'D. '] : undefined,
+      correctAnswer: questionType === 'multiple choice' ? 'A' : questionType === 'true/false' ? 'true' : '',
+      explanation: ''
+    };
+    setEditedQuestion(newQuestion);
+    setIsAddingNew(true);
+    setIsEditing(true);
   };
 
   const cancelEditing = () => {
     setEditedQuestion(null);
     setIsEditing(false);
+    setIsAddingNew(false);
   };
 
   const saveQuestion = () => {
     if (!editedQuestion || !onQuestionsUpdate) return;
     
-    const updatedQuestions = questions.map((q, idx) => 
-      idx === currentIndex ? { ...editedQuestion, id: idx + 1 } : q
-    );
-    onQuestionsUpdate(updatedQuestions);
+    // Validate question
+    if (!editedQuestion.question.trim()) return;
+    if (editedQuestion.type === 'multiple choice' && (!editedQuestion.options || editedQuestion.options.length < 2)) return;
+    if (!editedQuestion.correctAnswer) return;
+    
+    if (isAddingNew) {
+      // Add new question
+      const newQuestions = [...questions, { ...editedQuestion, id: questions.length + 1 }];
+      onQuestionsUpdate(newQuestions);
+      setCurrentIndex(newQuestions.length - 1);
+    } else {
+      // Update existing question
+      const updatedQuestions = questions.map((q, idx) => 
+        idx === currentIndex ? { ...editedQuestion, id: idx + 1 } : q
+      );
+      onQuestionsUpdate(updatedQuestions);
+    }
+    
     setIsEditing(false);
+    setIsAddingNew(false);
     setEditedQuestion(null);
   };
 
@@ -151,7 +185,12 @@ export default function QuestionPreview({
     return option.replace(/^[A-Z][\.\)]\s*/, '');
   };
 
-  if (!currentQuestion) return null;
+  // Handle empty questions list
+  if (questions.length === 0 && !isAddingNew) {
+    return null;
+  }
+
+  const currentQuestion = !isAddingNew ? questions[currentIndex] : null;
 
   return (
     <Card className="border-primary/20 bg-card/50 backdrop-blur">
@@ -159,16 +198,21 @@ export default function QuestionPreview({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Eye className="h-5 w-5 text-primary" />
-            {isEditing ? 'Chỉnh sửa câu hỏi' : 'Xem trước câu hỏi'}
+            {isAddingNew ? 'Thêm câu hỏi mới' : isEditing ? 'Chỉnh sửa câu hỏi' : 'Xem trước câu hỏi'}
           </CardTitle>
           <div className="flex items-center gap-1">
             {editable && !isEditing && (
-              <Button variant="ghost" size="icon" onClick={startEditing}>
-                <Pencil className="h-4 w-4" />
-              </Button>
+              <>
+                <Button variant="ghost" size="icon" onClick={startAddingNew} title="Thêm câu hỏi mới">
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={startEditing} title="Chỉnh sửa">
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </>
             )}
-            {editable && questions.length > 1 && (
-              <Button variant="ghost" size="icon" onClick={deleteQuestion} className="text-destructive hover:text-destructive">
+            {editable && !isEditing && questions.length > 1 && (
+              <Button variant="ghost" size="icon" onClick={deleteQuestion} className="text-destructive hover:text-destructive" title="Xóa câu hỏi">
                 <Trash2 className="h-4 w-4" />
               </Button>
             )}
@@ -177,12 +221,22 @@ export default function QuestionPreview({
             </Button>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Câu {currentIndex + 1} / {questions.length}</span>
-          <Badge variant="outline" className="text-xs">
-            {currentQuestion.type}
-          </Badge>
-        </div>
+        {!isAddingNew && currentQuestion && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Câu {currentIndex + 1} / {questions.length}</span>
+            <Badge variant="outline" className="text-xs">
+              {currentQuestion.type}
+            </Badge>
+          </div>
+        )}
+        {isAddingNew && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Thêm câu hỏi #{questions.length + 1}</span>
+            <Badge variant="outline" className="text-xs">
+              {questionType}
+            </Badge>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Question Navigation Pills */}
@@ -316,7 +370,7 @@ export default function QuestionPreview({
               </Button>
             </div>
           </div>
-        ) : (
+        ) : currentQuestion ? (
           /* View Mode */
           <>
             {/* Question Content */}
@@ -412,7 +466,7 @@ export default function QuestionPreview({
               </div>
             )}
           </>
-        )}
+        ) : null}
 
         {/* Navigation Buttons */}
         {!isEditing && (

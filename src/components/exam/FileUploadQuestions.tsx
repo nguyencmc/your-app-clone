@@ -378,6 +378,7 @@ export default function FileUploadQuestions({ onQuestionsLoaded, questionType }:
                   onQuestionsLoaded(updatedQuestions);
                 }}
                 editable={true}
+                questionType={questionType}
               />
             )}
           </div>
