@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { v4 as uuidv4 } from "uuid";
 
 export interface Profile {
   id: string;
@@ -89,5 +90,46 @@ export function useProfile() {
     }
   };
 
-  return { profile, isLoading, updateProfile, refetch: fetchProfile };
+  const uploadAvatar = async (file: File) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${uuidv4()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update profile with new avatar URL
+      await updateProfile({ avatar_url: publicUrl });
+
+      toast({
+        title: "Avatar Updated",
+        description: "Your avatar has been updated successfully.",
+      });
+
+      return publicUrl;
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload avatar.",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  return { profile, isLoading, updateProfile, uploadAvatar, refetch: fetchProfile };
 }
