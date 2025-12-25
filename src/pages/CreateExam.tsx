@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Sparkles, Loader2, Check, X, BookOpen, Brain, Target, Clock } from "lucide-react";
+import { ArrowLeft, Sparkles, Loader2, Check, X, BookOpen, Brain, Target, Clock, Upload } from "lucide-react";
+import FileUploadQuestions from "@/components/exam/FileUploadQuestions";
 
 interface Question {
   id: number;
@@ -56,6 +58,7 @@ export default function CreateExam() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [createMode, setCreateMode] = useState<"ai" | "upload">("ai");
   
   const [formData, setFormData] = useState({
     examTitle: "",
@@ -134,6 +137,11 @@ export default function CreateExam() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleFileQuestionsLoaded = (loadedQuestions: Question[]) => {
+    setQuestions(loadedQuestions);
+    setShowPreview(true);
   };
 
   const handleSaveExam = async () => {
@@ -218,7 +226,7 @@ export default function CreateExam() {
                   Exam Configuration
                 </CardTitle>
                 <CardDescription>
-                  Configure your exam settings and let AI generate questions
+                  Configure your exam and generate questions
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -253,40 +261,6 @@ export default function CreateExam() {
                   </Select>
                 </div>
 
-                {/* Topic/Focus Area */}
-                <div className="space-y-2">
-                  <Label htmlFor="topic">Specific Topic (Optional)</Label>
-                  <Textarea
-                    id="topic"
-                    placeholder="e.g., Quadratic equations, Newton's laws, World War II..."
-                    value={formData.topic}
-                    onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
-                    className="min-h-[80px]"
-                  />
-                </div>
-
-                {/* Difficulty Selection */}
-                <div className="space-y-3">
-                  <Label>Difficulty Level</Label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {difficulties.map((diff) => (
-                      <button
-                        key={diff.value}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, difficulty: diff.value })}
-                        className={`p-3 rounded-lg border-2 text-left transition-all ${
-                          formData.difficulty === diff.value
-                            ? "border-primary bg-primary/10"
-                            : "border-border hover:border-primary/50"
-                        }`}
-                      >
-                        <div className="font-medium text-sm">{diff.label}</div>
-                        <div className="text-xs text-muted-foreground mt-1">{diff.description}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Question Type */}
                 <div className="space-y-3">
                   <Label>Question Type</Label>
@@ -311,64 +285,121 @@ export default function CreateExam() {
                   </div>
                 </div>
 
-                {/* Question Count & Time Limit */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="questionCount">Number of Questions</Label>
-                    <Select
-                      value={formData.questionCount}
-                      onValueChange={(value) => setFormData({ ...formData, questionCount: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[5, 10, 15, 20, 25, 30].map((num) => (
-                          <SelectItem key={num} value={num.toString()}>
-                            {num} questions
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="timeLimit">Time Limit (minutes)</Label>
-                    <Select
-                      value={formData.timeLimit}
-                      onValueChange={(value) => setFormData({ ...formData, timeLimit: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[15, 30, 45, 60, 90, 120].map((num) => (
-                          <SelectItem key={num} value={num.toString()}>
-                            {num} minutes
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                {/* Time Limit */}
+                <div className="space-y-2">
+                  <Label htmlFor="timeLimit">Time Limit (minutes)</Label>
+                  <Select
+                    value={formData.timeLimit}
+                    onValueChange={(value) => setFormData({ ...formData, timeLimit: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[15, 30, 45, 60, 90, 120].map((num) => (
+                        <SelectItem key={num} value={num.toString()}>
+                          {num} minutes
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {/* Generate Button */}
-                <Button
-                  onClick={handleGenerateQuestions}
-                  disabled={isLoading || !formData.subject}
-                  className="w-full h-12 text-lg gap-2"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Generating Questions...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-5 w-5" />
-                      Generate with AI
-                    </>
-                  )}
-                </Button>
+                {/* Create Mode Tabs */}
+                <Tabs value={createMode} onValueChange={(v) => setCreateMode(v as "ai" | "upload")}>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="ai" className="gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      AI Generate
+                    </TabsTrigger>
+                    <TabsTrigger value="upload" className="gap-2">
+                      <Upload className="h-4 w-4" />
+                      Upload File
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="ai" className="space-y-4 mt-4">
+                    {/* Topic/Focus Area */}
+                    <div className="space-y-2">
+                      <Label htmlFor="topic">Specific Topic (Optional)</Label>
+                      <Textarea
+                        id="topic"
+                        placeholder="e.g., Quadratic equations, Newton's laws, World War II..."
+                        value={formData.topic}
+                        onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
+                        className="min-h-[80px]"
+                      />
+                    </div>
+
+                    {/* Difficulty Selection */}
+                    <div className="space-y-3">
+                      <Label>Difficulty Level</Label>
+                      <div className="grid grid-cols-3 gap-3">
+                        {difficulties.map((diff) => (
+                          <button
+                            key={diff.value}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, difficulty: diff.value })}
+                            className={`p-3 rounded-lg border-2 text-left transition-all ${
+                              formData.difficulty === diff.value
+                                ? "border-primary bg-primary/10"
+                                : "border-border hover:border-primary/50"
+                            }`}
+                          >
+                            <div className="font-medium text-sm">{diff.label}</div>
+                            <div className="text-xs text-muted-foreground mt-1">{diff.description}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Question Count */}
+                    <div className="space-y-2">
+                      <Label htmlFor="questionCount">Number of Questions</Label>
+                      <Select
+                        value={formData.questionCount}
+                        onValueChange={(value) => setFormData({ ...formData, questionCount: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[5, 10, 15, 20, 25, 30].map((num) => (
+                            <SelectItem key={num} value={num.toString()}>
+                              {num} questions
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Generate Button */}
+                    <Button
+                      onClick={handleGenerateQuestions}
+                      disabled={isLoading || !formData.subject}
+                      className="w-full h-12 text-lg gap-2"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          Generating Questions...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-5 w-5" />
+                          Generate with AI
+                        </>
+                      )}
+                    </Button>
+                  </TabsContent>
+                  
+                  <TabsContent value="upload" className="mt-4">
+                    <FileUploadQuestions
+                      onQuestionsLoaded={handleFileQuestionsLoaded}
+                      questionType={formData.questionType}
+                    />
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </div>
@@ -381,9 +412,9 @@ export default function CreateExam() {
                   <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
                     <Sparkles className="h-10 w-10 text-primary" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">Ready to Generate</h3>
+                  <h3 className="text-xl font-semibold mb-2">Ready to Create</h3>
                   <p className="text-muted-foreground max-w-sm mx-auto">
-                    Configure your exam settings and click "Generate with AI" to create questions instantly
+                    Generate questions with AI or upload a file with your own questions
                   </p>
                 </div>
               ) : (
