@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useExamAttempts } from "@/hooks/useExamAttempts";
 import { Clock, CheckCircle, XCircle, ArrowLeft, ArrowRight, Send, Trophy, RotateCcw } from "lucide-react";
 
 interface Question {
@@ -33,6 +34,7 @@ const TakeExam = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { saveAttempt } = useExamAttempts();
 
   const [exam, setExam] = useState<Exam | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,6 +43,8 @@ const TakeExam = () => {
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [examState, setExamState] = useState<ExamState>("taking");
   const [score, setScore] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
+  const startTimeRef = useRef<number>(Date.now());
 
   useEffect(() => {
     const fetchExam = async () => {
@@ -81,9 +85,11 @@ const TakeExam = () => {
     fetchExam();
   }, [id, navigate, toast]);
 
-  const handleSubmit = useCallback(() => {
-    if (!exam) return;
+  const handleSubmit = useCallback(async () => {
+    if (!exam || !id || isSaving) return;
 
+    setIsSaving(true);
+    
     let correctCount = 0;
     exam.questions.forEach((q) => {
       if (answers[q.id] === q.correct_answer) {
@@ -91,14 +97,30 @@ const TakeExam = () => {
       }
     });
 
-    setScore(correctCount);
-    setExamState("submitted");
+    // Calculate time spent in seconds
+    const timeSpent = Math.floor((Date.now() - startTimeRef.current) / 1000);
 
-    toast({
-      title: "Exam Submitted!",
-      description: `You scored ${correctCount}/${exam.questions.length}`,
-    });
-  }, [exam, answers, toast]);
+    // Prepare answers array for saving
+    const answersArray = exam.questions.map((q) => ({
+      question_id: q.id,
+      selected_answer: answers[q.id] || "",
+      correct_answer: q.correct_answer,
+      is_correct: answers[q.id] === q.correct_answer,
+    }));
+
+    try {
+      await saveAttempt(id, answersArray, correctCount, exam.questions.length, timeSpent);
+      setScore(correctCount);
+      setExamState("submitted");
+    } catch (error) {
+      console.error("Error saving exam attempt:", error);
+      // Still show results even if saving fails
+      setScore(correctCount);
+      setExamState("submitted");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [exam, id, answers, isSaving, saveAttempt]);
 
   useEffect(() => {
     if (examState !== "taking" || timeRemaining <= 0) return;
@@ -358,9 +380,9 @@ const TakeExam = () => {
           </div>
 
           {currentQuestion === exam.questions.length - 1 ? (
-            <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={handleSubmit} disabled={isSaving} className="bg-green-600 hover:bg-green-700">
               <Send className="h-4 w-4 mr-2" />
-              Submit Exam
+              {isSaving ? "Saving..." : "Submit Exam"}
             </Button>
           ) : (
             <Button
