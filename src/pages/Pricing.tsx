@@ -112,10 +112,13 @@ const Pricing = () => {
 
           {/* Selected Plan Card */}
           <div className="max-w-lg mx-auto mb-12">
-            <Card className="bg-card/80 backdrop-blur-sm border-border/50 overflow-hidden">
+            <Card 
+              key={selectedPlan}
+              className="bg-card/80 backdrop-blur-sm border-border/50 overflow-hidden animate-fade-in"
+            >
               <CardContent className="p-6 space-y-6">
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between animate-fade-in" style={{ animationDelay: '50ms' }}>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                       <Icon className="w-5 h-5 text-primary" />
@@ -137,7 +140,7 @@ const Pricing = () => {
                 </div>
 
                 {/* Description */}
-                <div className="bg-muted/30 rounded-lg p-4 border border-border/30">
+                <div className="bg-muted/30 rounded-lg p-4 border border-border/30 animate-fade-in" style={{ animationDelay: '100ms' }}>
                   <p className="text-sm text-muted-foreground">
                     {currentPlan.description}
                   </p>
@@ -146,13 +149,17 @@ const Pricing = () => {
                 {/* Features */}
                 <div className="space-y-4">
                   {currentPlan.highlight && (
-                    <p className="text-sm font-semibold text-primary">
+                    <p className="text-sm font-semibold text-primary animate-fade-in" style={{ animationDelay: '150ms' }}>
                       {currentPlan.highlight}
                     </p>
                   )}
                   <ul className="space-y-3">
                     {currentPlan.features.map((feature, i) => (
-                      <li key={i} className="flex items-center gap-3 text-sm">
+                      <li 
+                        key={i} 
+                        className="flex items-center gap-3 text-sm animate-fade-in"
+                        style={{ animationDelay: `${200 + i * 50}ms` }}
+                      >
                         <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                           <Check className="w-3 h-3 text-primary" />
                         </div>
@@ -164,7 +171,8 @@ const Pricing = () => {
 
                 {/* CTA Button */}
                 <Button 
-                  className="w-full h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-medium"
+                  className="w-full h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-medium animate-fade-in"
+                  style={{ animationDelay: '400ms' }}
                   asChild
                 >
                   <Link to={currentPlan.ctaLink} className="flex items-center justify-center gap-2">
