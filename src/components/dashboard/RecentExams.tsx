@@ -90,7 +90,12 @@ const RecentExams = () => {
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-foreground">Recent Exams</h3>
         {exams.length > 0 && (
-          <Button variant="ghost" size="sm" className="text-muted-foreground">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-muted-foreground"
+            onClick={() => navigate("/dashboard/exams")}
+          >
             View all
           </Button>
         )}

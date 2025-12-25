@@ -17,6 +17,7 @@ import Usage from "./pages/dashboard/Usage";
 import Settings from "./pages/dashboard/Settings";
 import Courses from "./pages/dashboard/Courses";
 import Admin from "./pages/dashboard/Admin";
+import ExamManagement from "./pages/dashboard/ExamManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
           <Route path="/dashboard/settings" element={<Settings />} />
           <Route path="/dashboard/courses" element={<Courses />} />
           <Route path="/dashboard/admin" element={<Admin />} />
+          <Route path="/dashboard/exams" element={<ExamManagement />} />
           <Route path="/create-exam" element={<CreateExam />} />
           <Route path="/exam/:id" element={<ExamDetail />} />
           <Route path="/exam/:id/take" element={<TakeExam />} />

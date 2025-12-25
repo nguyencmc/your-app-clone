@@ -32,7 +32,7 @@ const featureCards: FeatureCard[] = [
     color: "from-rose-500/20 to-rose-500/5",
     borderColor: "hover:border-rose-500/30",
     numbers: ["01", "02", "03"],
-    route: "/create-exam",
+    route: "/dashboard/exams",
   },
   {
     title: "Lesson planning",
