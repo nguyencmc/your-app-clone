@@ -66,7 +66,7 @@ export function useExamAttempts() {
 
   const saveAttempt = async (
     examId: string,
-    answers: Record<string, string>[],
+    answers: Json,
     score: number,
     totalQuestions: number,
     timeSpent: number
