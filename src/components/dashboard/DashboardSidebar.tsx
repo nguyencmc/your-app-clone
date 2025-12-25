@@ -13,6 +13,7 @@ import {
   Crown,
   ChevronLeft,
   Menu,
+  BookOpen,
 } from "lucide-react";
 import {
   Sidebar,
@@ -29,6 +30,7 @@ import { Button } from "@/components/ui/button";
 
 const menuItems = [
   { icon: Home, label: "Dashboard", path: "/dashboard" },
+  { icon: BookOpen, label: "Courses", path: "/dashboard/courses" },
   { icon: Play, label: "Playground", path: "/dashboard/playground" },
   { icon: FileText, label: "Documentation", path: "/dashboard/docs" },
   { icon: MessageSquare, label: "Forum", path: "/dashboard/forum" },
