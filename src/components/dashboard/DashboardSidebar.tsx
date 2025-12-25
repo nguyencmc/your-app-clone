@@ -1,6 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useUserRole } from "@/hooks/useUserRole";
 import {
   GraduationCap,
   Home,
@@ -14,6 +15,7 @@ import {
   ChevronLeft,
   Menu,
   BookOpen,
+  Shield,
 } from "lucide-react";
 import {
   Sidebar,
@@ -38,6 +40,8 @@ const menuItems = [
   { icon: Settings, label: "Settings", path: "/dashboard/settings" },
 ];
 
+const adminMenuItem = { icon: Shield, label: "Admin", path: "/dashboard/admin" };
+
 interface DashboardSidebarProps {
   userName?: string;
 }
@@ -48,6 +52,11 @@ const DashboardSidebar = ({ userName = "User" }: DashboardSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { isAdmin } = useUserRole();
+
+  const allMenuItems = isAdmin 
+    ? [...menuItems, adminMenuItem] 
+    : menuItems;
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
@@ -95,7 +104,7 @@ const DashboardSidebar = ({ userName = "User" }: DashboardSidebarProps) => {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
+              {allMenuItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 return (
                   <SidebarMenuItem key={item.label}>
