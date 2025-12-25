@@ -57,21 +57,35 @@ export default function FileUploadQuestions({ onQuestionsLoaded, questionType }:
       fields.push(current.trim());
 
       if (questionType === 'multiple choice') {
-        // Format: question,optionA,optionB,optionC,optionD,correctAnswer,explanation
-        if (fields.length >= 6) {
-          questions.push({
-            id: questions.length + 1,
-            question: fields[0],
-            type: 'multiple choice',
-            options: [
-              `A. ${fields[1]}`,
-              `B. ${fields[2]}`,
-              `C. ${fields[3]}`,
-              `D. ${fields[4]}`
-            ],
-            correctAnswer: fields[5].toUpperCase(),
-            explanation: fields[6] || ''
-          });
+        // Format: question,option1,option2,...,optionN,correctAnswer,explanation(optional)
+        // Minimum: question + 2 options + answer = 4 fields
+        if (fields.length >= 4) {
+          const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+          
+          // Find the correct answer field - it should be a single uppercase letter
+          let correctAnswerIndex = -1;
+          for (let j = fields.length - 1; j >= 2; j--) {
+            const field = fields[j].trim().toUpperCase();
+            if (field.length === 1 && /^[A-Z]$/.test(field)) {
+              correctAnswerIndex = j;
+              break;
+            }
+          }
+          
+          if (correctAnswerIndex >= 2) {
+            const optionFields = fields.slice(1, correctAnswerIndex);
+            if (optionFields.length >= 2) {
+              const options = optionFields.map((opt, idx) => `${letters[idx]}. ${opt}`);
+              questions.push({
+                id: questions.length + 1,
+                question: fields[0],
+                type: 'multiple choice',
+                options,
+                correctAnswer: fields[correctAnswerIndex].toUpperCase(),
+                explanation: fields[correctAnswerIndex + 1] || ''
+              });
+            }
+          }
         }
       } else if (questionType === 'true/false') {
         // Format: question,correctAnswer(true/false),explanation
@@ -118,7 +132,8 @@ export default function FileUploadQuestions({ onQuestionsLoaded, questionType }:
         
         for (let i = 1; i < lines.length; i++) {
           const line = lines[i];
-          const optionMatch = line.match(/^([A-D])[\.\)]\s*(.+)/i);
+          // Support A-Z options (not just A-D)
+          const optionMatch = line.match(/^([A-Z])[\.\)]\s*(.+)/i);
           
           if (optionMatch) {
             options.push(`${optionMatch[1].toUpperCase()}. ${optionMatch[2]}`);
@@ -343,7 +358,8 @@ export default function FileUploadQuestions({ onQuestionsLoaded, questionType }:
           <p className="font-medium">File Format Guide:</p>
           {questionType === 'multiple choice' ? (
             <>
-              <p><strong>CSV:</strong> question,optionA,optionB,optionC,optionD,answer,explanation</p>
+              <p><strong>CSV:</strong> question,option1,option2,...,optionN,answer,explanation</p>
+              <p className="text-muted-foreground italic">* Hỗ trợ từ 2 đến 26 đáp án (A-Z)</p>
               <p><strong>TXT:</strong> Each question block separated by blank line:</p>
               <pre className="text-xs mt-1 p-2 bg-background rounded">
 {`1. Question text here?
@@ -351,6 +367,8 @@ A. Option A
 B. Option B
 C. Option C
 D. Option D
+E. Option E (optional)
+F. Option F (optional)
 Answer: A
 Explanation: Why A is correct`}
               </pre>
