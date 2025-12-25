@@ -2,8 +2,9 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, FileText, X, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Upload, FileText, X, AlertCircle, CheckCircle2, Eye } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import QuestionPreview from "./QuestionPreview";
 
 interface Question {
   id: number;
@@ -25,6 +26,8 @@ export default function FileUploadQuestions({ onQuestionsLoaded, questionType }:
   const [file, setFile] = useState<File | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
   const [parsedCount, setParsedCount] = useState<number>(0);
+  const [parsedQuestions, setParsedQuestions] = useState<Question[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const parseCSV = (content: string): Question[] => {
@@ -228,6 +231,7 @@ export default function FileUploadQuestions({ onQuestionsLoaded, questionType }:
       }
 
       setParsedCount(questions.length);
+      setParsedQuestions(questions);
       onQuestionsLoaded(questions);
       
       toast({
@@ -271,6 +275,8 @@ export default function FileUploadQuestions({ onQuestionsLoaded, questionType }:
     setFile(null);
     setParseError(null);
     setParsedCount(0);
+    setParsedQuestions([]);
+    setShowPreview(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -345,12 +351,30 @@ export default function FileUploadQuestions({ onQuestionsLoaded, questionType }:
         )}
 
         {parsedCount > 0 && !parseError && (
-          <Alert className="border-green-500/50 bg-green-500/10">
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-            <AlertDescription className="text-green-700 dark:text-green-300">
-              Successfully parsed {parsedCount} questions
-            </AlertDescription>
-          </Alert>
+          <div className="space-y-3">
+            <Alert className="border-green-500/50 bg-green-500/10">
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+              <AlertDescription className="text-green-700 dark:text-green-300 flex items-center justify-between">
+                <span>Successfully parsed {parsedCount} questions</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPreview(!showPreview)}
+                  className="ml-2"
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  {showPreview ? 'Ẩn xem trước' : 'Xem trước'}
+                </Button>
+              </AlertDescription>
+            </Alert>
+            
+            {showPreview && parsedQuestions.length > 0 && (
+              <QuestionPreview
+                questions={parsedQuestions}
+                onClose={() => setShowPreview(false)}
+              />
+            )}
+          </div>
         )}
 
         {/* Format Guide */}
