@@ -372,6 +372,12 @@ export default function FileUploadQuestions({ onQuestionsLoaded, questionType }:
               <QuestionPreview
                 questions={parsedQuestions}
                 onClose={() => setShowPreview(false)}
+                onQuestionsUpdate={(updatedQuestions) => {
+                  setParsedQuestions(updatedQuestions);
+                  setParsedCount(updatedQuestions.length);
+                  onQuestionsLoaded(updatedQuestions);
+                }}
+                editable={true}
               />
             )}
           </div>
