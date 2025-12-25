@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import {
   BookOpen,
   Calendar,
@@ -5,15 +6,33 @@ import {
   HelpCircle,
   Settings,
   Upload,
+  BarChart3,
+  ClipboardCheck,
+  LucideIcon,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-const featureCards = [
+interface FeatureCard {
+  title: string;
+  description: string;
+  color: string;
+  borderColor: string;
+  numbers?: string[];
+  grades?: string[];
+  fileTypes?: string[];
+  icon?: LucideIcon;
+  route?: string;
+  action?: string;
+}
+
+const featureCards: FeatureCard[] = [
   {
     title: "Manage your exams",
     description: "Create, edit, and manage your examinations",
     color: "from-rose-500/20 to-rose-500/5",
     borderColor: "hover:border-rose-500/30",
     numbers: ["01", "02", "03"],
+    route: "/create-exam",
   },
   {
     title: "Lesson planning",
@@ -21,6 +40,7 @@ const featureCards = [
     color: "from-amber-500/20 to-amber-500/5",
     borderColor: "hover:border-amber-500/30",
     icon: Calendar,
+    route: "/dashboard/courses",
   },
   {
     title: "View exam analytics",
@@ -28,6 +48,7 @@ const featureCards = [
     color: "from-purple-500/20 to-purple-500/5",
     borderColor: "hover:border-purple-500/30",
     grades: ["A", "B+", "A-"],
+    route: "/dashboard/usage",
   },
   {
     title: "Grade Exams",
@@ -35,6 +56,7 @@ const featureCards = [
     color: "from-primary/20 to-primary/5",
     borderColor: "hover:border-primary/30",
     grades: ["A+", "B+", "A-"],
+    action: "grade-exams",
   },
   {
     title: "Student grades",
@@ -42,6 +64,7 @@ const featureCards = [
     color: "from-cyan-500/20 to-cyan-500/5",
     borderColor: "hover:border-cyan-500/30",
     icon: Users,
+    route: "/dashboard/usage",
   },
   {
     title: "Course Files",
@@ -49,6 +72,7 @@ const featureCards = [
     color: "from-orange-500/20 to-orange-500/5",
     borderColor: "hover:border-orange-500/30",
     fileTypes: ["PDF", "DOC", "PPT", "IMG"],
+    route: "/dashboard/courses",
   },
   {
     title: "Tutorials",
@@ -56,6 +80,7 @@ const featureCards = [
     color: "from-green-500/20 to-green-500/5",
     borderColor: "hover:border-green-500/30",
     icon: HelpCircle,
+    route: "/dashboard/documentation",
   },
   {
     title: "Settings",
@@ -63,15 +88,31 @@ const featureCards = [
     color: "from-gray-500/20 to-gray-500/5",
     borderColor: "hover:border-gray-400/30",
     icon: Settings,
+    route: "/dashboard/settings",
   },
 ];
 
 const FeatureCards = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleCardClick = (card: FeatureCard) => {
+    if (card.route) {
+      navigate(card.route);
+    } else if (card.action === "grade-exams") {
+      toast({
+        title: "Chấm điểm bài thi",
+        description: "Vui lòng chọn bài thi từ danh sách Recent Exams để chấm điểm.",
+      });
+    }
+  };
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {featureCards.map((card, index) => (
         <div
           key={index}
+          onClick={() => handleCardClick(card)}
           className={`bg-gradient-to-br ${card.color} border border-border/50 ${card.borderColor} rounded-xl p-4 hover:scale-[1.02] transition-all cursor-pointer group`}
         >
           {card.numbers && (
