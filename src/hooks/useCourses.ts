@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { v4 as uuidv4 } from "uuid";
 
 export interface Course {
   id: string;
@@ -42,10 +43,50 @@ export function useCourses() {
     }
   };
 
-  const createCourse = async (title: string, description?: string, subject?: string) => {
+  const uploadCourseImage = async (file: File): Promise<string | null> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${uuidv4()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("course-images")
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("course-images")
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload image.",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  const createCourse = async (
+    title: string, 
+    description?: string, 
+    subject?: string,
+    imageFile?: File
+  ) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      let image_url: string | null = null;
+      if (imageFile) {
+        image_url = await uploadCourseImage(imageFile);
+      }
 
       const { data, error } = await supabase
         .from("courses")
@@ -54,6 +95,7 @@ export function useCourses() {
           title,
           description,
           subject,
+          image_url,
         }])
         .select()
         .single();
@@ -78,11 +120,20 @@ export function useCourses() {
     }
   };
 
-  const updateCourse = async (id: string, updates: Partial<Course>) => {
+  const updateCourse = async (
+    id: string, 
+    updates: Partial<Course>,
+    imageFile?: File
+  ) => {
     try {
+      let image_url = updates.image_url;
+      if (imageFile) {
+        image_url = await uploadCourseImage(imageFile);
+      }
+
       const { data, error } = await supabase
         .from("courses")
-        .update(updates)
+        .update({ ...updates, image_url })
         .eq("id", id)
         .select()
         .single();
@@ -132,5 +183,13 @@ export function useCourses() {
     }
   };
 
-  return { courses, isLoading, createCourse, updateCourse, deleteCourse, refetch: fetchCourses };
+  return { 
+    courses, 
+    isLoading, 
+    createCourse, 
+    updateCourse, 
+    deleteCourse, 
+    uploadCourseImage,
+    refetch: fetchCourses 
+  };
 }
