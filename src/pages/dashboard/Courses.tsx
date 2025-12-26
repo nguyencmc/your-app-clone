@@ -29,7 +29,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useCourses, Course } from "@/hooks/useCourses";
-import { Plus, Pencil, Trash2, BookOpen, Image, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, BookOpen, Image, Loader2, Users } from "lucide-react";
 
 const Courses = () => {
   const navigate = useNavigate();
@@ -79,7 +79,7 @@ const Courses = () => {
     
     setIsSaving(true);
     try {
-      await createCourse(
+      const newCourse = await createCourse(
         formData.title,
         formData.description || undefined,
         formData.subject || undefined,
@@ -87,6 +87,10 @@ const Courses = () => {
       );
       resetForm();
       setIsCreateOpen(false);
+      // Navigate to student management page after creating course
+      if (newCourse?.id) {
+        navigate(`/dashboard/courses/${newCourse.id}/students`);
+      }
     } finally {
       setIsSaving(false);
     }
@@ -275,7 +279,15 @@ const Courses = () => {
                           {course.description}
                         </p>
                       )}
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => navigate(`/dashboard/courses/${course.id}/students`)}
+                        >
+                          <Users className="w-4 h-4 mr-1" />
+                          Students
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
