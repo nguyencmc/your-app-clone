@@ -1,13 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import {
+  FileText,
   BookOpen,
-  Calendar,
-  Users,
-  HelpCircle,
-  Settings,
-  Upload,
   BarChart3,
-  ClipboardCheck,
+  Zap,
+  Users,
+  FolderOpen,
+  Play,
+  Settings,
   LucideIcon,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -15,12 +15,10 @@ import { useToast } from "@/hooks/use-toast";
 interface FeatureCard {
   title: string;
   description: string;
-  color: string;
-  borderColor: string;
-  numbers?: string[];
-  grades?: string[];
-  fileTypes?: string[];
-  icon?: LucideIcon;
+  icon: LucideIcon;
+  iconColor: string;
+  iconBg: string;
+  illustration: "exams" | "lessons" | "analytics" | "grade" | "students" | "files" | "tutorials" | "usage" | "settings";
   route?: string;
   action?: string;
 }
@@ -29,68 +27,277 @@ const featureCards: FeatureCard[] = [
   {
     title: "Manage your exams",
     description: "Create, edit, and manage your examinations",
-    color: "from-rose-500/20 to-rose-500/5",
-    borderColor: "hover:border-rose-500/30",
-    numbers: ["01", "02", "03"],
+    icon: FileText,
+    iconColor: "text-muted-foreground",
+    iconBg: "bg-muted/50",
+    illustration: "exams",
     route: "/dashboard/exams",
   },
   {
     title: "Lesson planning",
     description: "Plan and organize your teaching materials",
-    color: "from-amber-500/20 to-amber-500/5",
-    borderColor: "hover:border-amber-500/30",
-    icon: Calendar,
+    icon: BookOpen,
+    iconColor: "text-primary",
+    iconBg: "bg-primary/10",
+    illustration: "lessons",
     route: "/dashboard/courses",
   },
   {
     title: "View exam analytics",
     description: "Analyze student performance and exam statistics",
-    color: "from-purple-500/20 to-purple-500/5",
-    borderColor: "hover:border-purple-500/30",
-    grades: ["A", "B+", "A-"],
+    icon: BarChart3,
+    iconColor: "text-orange-400",
+    iconBg: "bg-orange-400/10",
+    illustration: "analytics",
     route: "/dashboard/usage",
   },
   {
     title: "Grade Exams",
-    description: "Grade exams efficiently with AI or manually",
-    color: "from-primary/20 to-primary/5",
-    borderColor: "hover:border-primary/30",
-    grades: ["A+", "B+", "A-"],
+    description: "Grade exams efficiently with AI assistance or manual tools.",
+    icon: Zap,
+    iconColor: "text-amber-400",
+    iconBg: "bg-amber-400/10",
+    illustration: "grade",
     action: "grade-exams",
   },
   {
     title: "Student grades",
     description: "View and manage student grades",
-    color: "from-cyan-500/20 to-cyan-500/5",
-    borderColor: "hover:border-cyan-500/30",
     icon: Users,
+    iconColor: "text-primary",
+    iconBg: "bg-primary/10",
+    illustration: "students",
     route: "/dashboard/usage",
   },
   {
     title: "Course Files",
     description: "Upload and manage course materials",
-    color: "from-orange-500/20 to-orange-500/5",
-    borderColor: "hover:border-orange-500/30",
-    fileTypes: ["PDF", "DOC", "PPT", "IMG"],
+    icon: FolderOpen,
+    iconColor: "text-primary",
+    iconBg: "bg-primary/10",
+    illustration: "files",
     route: "/dashboard/courses",
   },
   {
     title: "Tutorials",
     description: "Learn how to use ExamAi effectively",
-    color: "from-green-500/20 to-green-500/5",
-    borderColor: "hover:border-green-500/30",
-    icon: HelpCircle,
+    icon: Play,
+    iconColor: "text-rose-400",
+    iconBg: "bg-rose-400/10",
+    illustration: "tutorials",
     route: "/dashboard/documentation",
+  },
+  {
+    title: "Usage",
+    description: "Monitor your account usage and limits",
+    icon: Zap,
+    iconColor: "text-amber-400",
+    iconBg: "bg-amber-400/10",
+    illustration: "usage",
+    route: "/dashboard/usage",
   },
   {
     title: "Settings",
     description: "Manage your account preferences",
-    color: "from-gray-500/20 to-gray-500/5",
-    borderColor: "hover:border-gray-400/30",
     icon: Settings,
+    iconColor: "text-muted-foreground",
+    iconBg: "bg-muted/50",
+    illustration: "settings",
     route: "/dashboard/settings",
   },
 ];
+
+const ExamsIllustration = () => (
+  <div className="w-full h-24 flex items-center justify-center">
+    <div className="w-32 bg-muted/30 rounded-lg p-3 border border-border/30">
+      <div className="w-12 h-1.5 bg-primary/30 rounded mb-2" />
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full border-2 border-muted-foreground/30" />
+          <div className="flex-1 h-1.5 bg-muted-foreground/20 rounded" />
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full border-2 border-muted-foreground/30" />
+          <div className="flex-1 h-1.5 bg-muted-foreground/20 rounded" />
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full border-2 border-muted-foreground/30" />
+          <div className="flex-1 h-1.5 bg-muted-foreground/20 rounded" />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const LessonsIllustration = () => (
+  <div className="w-full h-24 flex items-center justify-center">
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 bg-teal-500/20 rounded-lg px-3 py-1.5">
+        <span className="text-xs font-mono text-teal-400 bg-teal-500/30 px-1.5 py-0.5 rounded">01</span>
+        <div className="w-20 h-2 bg-primary/40 rounded" />
+      </div>
+      <div className="flex items-center gap-2 bg-muted/30 rounded-lg px-3 py-1.5">
+        <span className="text-xs font-mono text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">02</span>
+        <div className="w-16 h-2 bg-muted-foreground/30 rounded" />
+      </div>
+    </div>
+  </div>
+);
+
+const AnalyticsIllustration = () => (
+  <div className="w-full h-24 flex items-end justify-center gap-3 pb-2">
+    <div className="w-10 h-12 bg-orange-400/30 rounded-t-sm" />
+    <div className="w-10 h-16 bg-orange-400/50 rounded-t-sm" />
+    <div className="w-10 h-20 bg-orange-400 rounded-t-sm" />
+  </div>
+);
+
+const GradeIllustration = () => (
+  <div className="w-full h-24 flex items-center justify-center">
+    <div className="relative">
+      <div className="w-20 h-24 bg-amber-100 dark:bg-amber-900/30 rounded-lg shadow-lg transform -rotate-6 absolute -left-4">
+        <div className="p-2">
+          <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center text-xs font-bold text-green-600 dark:text-green-400 absolute bottom-2 right-2">A</div>
+        </div>
+      </div>
+      <div className="w-20 h-24 bg-amber-50 dark:bg-amber-900/20 rounded-lg shadow-lg transform rotate-3 relative">
+        <div className="p-2">
+          <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-bold text-blue-600 dark:text-blue-400 absolute bottom-2 right-2">B+</div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const StudentsIllustration = () => (
+  <div className="w-full h-24 flex items-center justify-center">
+    <div className="bg-muted/30 rounded-lg p-3 border border-border/30">
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <div className="w-16 h-2 bg-primary/40 rounded" />
+          <span className="text-[10px] font-bold text-green-500 bg-green-500/20 px-1.5 py-0.5 rounded">A+</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-20 h-2 bg-rose-400/40 rounded" />
+          <span className="text-[10px] font-bold text-blue-500 bg-blue-500/20 px-1.5 py-0.5 rounded">B+</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-12 h-2 bg-muted-foreground/30 rounded" />
+          <span className="text-[10px] font-bold text-orange-500 bg-orange-500/20 px-1.5 py-0.5 rounded">A-</span>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const FilesIllustration = () => (
+  <div className="w-full h-24 flex items-center justify-center gap-2">
+    <div className="w-10 h-12 bg-red-500/20 rounded flex items-center justify-center">
+      <span className="text-[8px] font-bold text-red-500">PDF</span>
+    </div>
+    <div className="w-10 h-12 bg-blue-500/20 rounded flex items-center justify-center">
+      <span className="text-[8px] font-bold text-blue-500">DOC</span>
+    </div>
+    <div className="w-10 h-12 bg-orange-500/20 rounded flex items-center justify-center">
+      <span className="text-[8px] font-bold text-orange-500">PPT</span>
+    </div>
+    <div className="w-10 h-12 bg-teal-500/20 rounded flex items-center justify-center">
+      <span className="text-[8px] font-bold text-teal-500">IMG</span>
+    </div>
+  </div>
+);
+
+const TutorialsIllustration = () => (
+  <div className="w-full h-24 flex items-center justify-center">
+    <div className="w-28 h-20 bg-rose-100 dark:bg-rose-900/30 rounded-lg flex items-center justify-center">
+      <div className="w-10 h-10 rounded-full bg-rose-400/30 flex items-center justify-center">
+        <Play className="w-5 h-5 text-rose-500 fill-rose-500" />
+      </div>
+    </div>
+  </div>
+);
+
+const UsageIllustration = () => (
+  <div className="w-full h-24 flex items-center justify-center">
+    <div className="relative w-20 h-20">
+      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+        <circle
+          cx="18"
+          cy="18"
+          r="14"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          className="text-muted/30"
+        />
+        <circle
+          cx="18"
+          cy="18"
+          r="14"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeDasharray="66 100"
+          className="text-amber-400"
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-lg font-bold text-foreground">75%</span>
+        <span className="text-[8px] text-muted-foreground">USED</span>
+      </div>
+    </div>
+  </div>
+);
+
+const SettingsIllustration = () => (
+  <div className="w-full h-24 flex items-center justify-center">
+    <div className="space-y-2.5">
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-4 bg-muted/50 rounded-full flex items-center px-0.5">
+          <div className="w-3 h-3 rounded-full bg-muted-foreground/30" />
+        </div>
+        <div className="w-16 h-2 bg-muted-foreground/20 rounded" />
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-4 bg-primary/30 rounded-full flex items-center justify-end px-0.5">
+          <div className="w-3 h-3 rounded-full bg-primary" />
+        </div>
+        <div className="w-20 h-2 bg-muted-foreground/20 rounded" />
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-4 bg-muted/50 rounded-full flex items-center px-0.5">
+          <div className="w-3 h-3 rounded-full bg-muted-foreground/30" />
+        </div>
+        <div className="w-14 h-2 bg-muted-foreground/20 rounded" />
+      </div>
+    </div>
+  </div>
+);
+
+const getIllustration = (type: FeatureCard["illustration"]) => {
+  switch (type) {
+    case "exams":
+      return <ExamsIllustration />;
+    case "lessons":
+      return <LessonsIllustration />;
+    case "analytics":
+      return <AnalyticsIllustration />;
+    case "grade":
+      return <GradeIllustration />;
+    case "students":
+      return <StudentsIllustration />;
+    case "files":
+      return <FilesIllustration />;
+    case "tutorials":
+      return <TutorialsIllustration />;
+    case "usage":
+      return <UsageIllustration />;
+    case "settings":
+      return <SettingsIllustration />;
+    default:
+      return null;
+  }
+};
 
 const FeatureCards = () => {
   const navigate = useNavigate();
@@ -102,60 +309,32 @@ const FeatureCards = () => {
     } else if (card.action === "grade-exams") {
       toast({
         title: "Chấm điểm bài thi",
-        description: "Vui lòng chọn bài thi từ danh sách Recent Exams để chấm điểm.",
+        description: "Vui lòng chọn bài thi từ danh sách Exams để chấm điểm.",
       });
     }
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {featureCards.map((card, index) => (
         <div
           key={index}
           onClick={() => handleCardClick(card)}
-          className={`bg-gradient-to-br ${card.color} border border-border/50 ${card.borderColor} rounded-xl p-4 hover:scale-[1.02] transition-all cursor-pointer group`}
+          className="bg-card/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 rounded-xl p-4 hover:scale-[1.02] transition-all cursor-pointer group"
         >
-          {card.numbers && (
-            <div className="flex gap-2 mb-3">
-              {card.numbers.map((num, i) => (
-                <span
-                  key={i}
-                  className="text-xs font-mono text-primary bg-primary/10 px-2 py-1 rounded"
-                >
-                  {num}
-                </span>
-              ))}
+          {/* Illustration */}
+          {getIllustration(card.illustration)}
+
+          {/* Content */}
+          <div className="flex items-start gap-3 mt-2">
+            <div className={`w-9 h-9 rounded-lg ${card.iconBg} flex items-center justify-center shrink-0`}>
+              <card.icon className={`w-4 h-4 ${card.iconColor}`} />
             </div>
-          )}
-          {card.grades && (
-            <div className="flex gap-1 mb-3">
-              {card.grades.map((grade, i) => (
-                <span
-                  key={i}
-                  className="text-xs font-bold text-foreground bg-card/50 px-2 py-1 rounded"
-                >
-                  {grade}
-                </span>
-              ))}
+            <div>
+              <h4 className="text-sm font-semibold text-foreground mb-0.5">{card.title}</h4>
+              <p className="text-xs text-muted-foreground leading-relaxed">{card.description}</p>
             </div>
-          )}
-          {card.fileTypes && (
-            <div className="flex gap-1 mb-3 flex-wrap">
-              {card.fileTypes.map((type, i) => (
-                <span
-                  key={i}
-                  className="text-[10px] font-medium text-orange-400 bg-orange-400/10 px-1.5 py-0.5 rounded"
-                >
-                  {type}
-                </span>
-              ))}
-            </div>
-          )}
-          {card.icon && (
-            <card.icon className="w-6 h-6 text-muted-foreground mb-3 group-hover:text-foreground transition-colors" />
-          )}
-          <h4 className="text-sm font-medium text-foreground mb-1">{card.title}</h4>
-          <p className="text-xs text-muted-foreground">{card.description}</p>
+          </div>
         </div>
       ))}
     </div>
