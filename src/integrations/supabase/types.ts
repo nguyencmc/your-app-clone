@@ -131,12 +131,17 @@ export type Database = {
       }
       exams: {
         Row: {
+          ai_protection: boolean | null
+          course_id: string | null
           created_at: string
           difficulty: string
+          end_date: string | null
           id: string
           question_count: number
           question_type: string
           questions: Json
+          randomize_order: boolean | null
+          start_date: string | null
           subject: string
           time_limit: number
           title: string
@@ -144,12 +149,17 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_protection?: boolean | null
+          course_id?: string | null
           created_at?: string
           difficulty?: string
+          end_date?: string | null
           id?: string
           question_count?: number
           question_type?: string
           questions?: Json
+          randomize_order?: boolean | null
+          start_date?: string | null
           subject: string
           time_limit?: number
           title: string
@@ -157,19 +167,32 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_protection?: boolean | null
+          course_id?: string | null
           created_at?: string
           difficulty?: string
+          end_date?: string | null
           id?: string
           question_count?: number
           question_type?: string
           questions?: Json
+          randomize_order?: boolean | null
+          start_date?: string | null
           subject?: string
           time_limit?: number
           title?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "exams_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       forum_categories: {
         Row: {
