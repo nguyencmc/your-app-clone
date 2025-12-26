@@ -10,6 +10,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -27,12 +35,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useCourses, Course } from "@/hooks/useCourses";
 import { 
   Plus, 
@@ -43,11 +45,7 @@ import {
   Loader2, 
   Users, 
   Search,
-  LayoutGrid,
-  List,
-  MoreVertical,
   FileText,
-  BookOpen,
   Calendar,
   FolderOpen,
   ClipboardList
@@ -63,7 +61,7 @@ const Courses = () => {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [deletingCourse, setDeletingCourse] = useState<Course | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [searchTerm, setSearchTerm] = useState("");
   const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
   
@@ -222,7 +220,7 @@ const Courses = () => {
               </Button>
             </div>
 
-            {/* Search and View Toggle */}
+            {/* Search */}
             <div className="flex items-center gap-4 mb-6">
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -232,26 +230,6 @@ const Courses = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 bg-secondary/50 border-border/50"
                 />
-              </div>
-              <div className="flex items-center rounded-lg bg-secondary/50 p-1">
-                <Button
-                  variant={viewMode === "grid" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("grid")}
-                  className={viewMode === "grid" ? "bg-primary" : ""}
-                >
-                  <LayoutGrid className="w-4 h-4 mr-2" />
-                  Grid
-                </Button>
-                <Button
-                  variant={viewMode === "list" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("list")}
-                  className={viewMode === "list" ? "bg-primary" : ""}
-                >
-                  <List className="w-4 h-4 mr-2" />
-                  List
-                </Button>
               </div>
             </div>
 
@@ -279,120 +257,122 @@ const Courses = () => {
                 </CardContent>
               </Card>
             ) : (
-              /* Courses Section */
-              <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-                <CardContent className="p-6">
+              /* Courses Table Section */
+              <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent overflow-hidden">
+                <CardContent className="p-0">
                   {/* Section Header */}
-                  <div className="flex items-center justify-between mb-6 pb-4 border-b border-border/50">
+                  <div className="flex items-center justify-between p-4 border-b border-border/50">
                     <div className="flex items-center gap-3">
-                      <span className="text-lg font-semibold">§ All Courses</span>
+                      <span className="text-lg font-semibold">§ No Section</span>
                       <Badge variant="secondary" className="bg-secondary/80">
                         {filteredCourses.length} Courses
                       </Badge>
                     </div>
                   </div>
 
-                  {/* Courses Grid/List */}
-                  <div className={
-                    viewMode === "grid" 
-                      ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
-                      : "space-y-4"
-                  }>
-                    {filteredCourses.map((course, index) => (
-                      <Card 
-                        key={course.id} 
-                        className="bg-secondary/30 border-border/50 hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5 group"
-                      >
-                        <CardContent className="p-5">
-                          {/* Course Header */}
-                          <div className="flex items-start justify-between mb-4">
+                  {/* Courses Table */}
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-border/50 hover:bg-transparent">
+                        <TableHead className="text-muted-foreground">Courses</TableHead>
+                        <TableHead className="text-muted-foreground">Professor</TableHead>
+                        <TableHead className="text-muted-foreground">Course Code</TableHead>
+                        <TableHead className="text-muted-foreground">Students</TableHead>
+                        <TableHead className="text-muted-foreground">Academic Period</TableHead>
+                        <TableHead className="text-muted-foreground text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredCourses.map((course, index) => (
+                        <TableRow key={course.id} className="border-border/30 hover:bg-secondary/20">
+                          {/* Course Name */}
+                          <TableCell>
                             <div className="flex items-center gap-3">
-                              <div className={`p-3 rounded-xl ${getIconColor(index)}`}>
-                                <GraduationCap className="w-6 h-6" />
+                              <div className={`p-2 rounded-lg ${getIconColor(index)}`}>
+                                <GraduationCap className="w-5 h-5" />
                               </div>
-                              <div>
-                                <h3 className="font-semibold text-lg">{course.title}</h3>
-                                {course.subject && (
-                                  <p className="text-sm text-muted-foreground">{course.subject}</p>
-                                )}
-                              </div>
+                              <span className="font-medium">{course.title}</span>
                             </div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <MoreVertical className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleEdit(course)}>
-                                  <Pencil className="w-4 h-4 mr-2" />
-                                  Edit Course
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  className="text-destructive"
-                                  onClick={() => { setDeletingCourse(course); setIsDeleteOpen(true); }}
-                                >
-                                  <Trash2 className="w-4 h-4 mr-2" />
-                                  Delete Course
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-
-                          {/* Course Stats */}
-                          <div className="flex items-center gap-2 flex-wrap mb-4">
-                            <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 hover:bg-purple-500/30">
-                              <Users className="w-3 h-3 mr-1" />
-                              {studentCounts[course.id] || 0} students
-                            </Badge>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 text-xs border-border/50 hover:bg-secondary"
-                              onClick={() => navigate(`/dashboard/courses/${course.id}/students`)}
-                            >
-                              <Users className="w-3 h-3 mr-1" />
-                              Students
-                            </Button>
-                            {course.created_at && (
-                              <Badge variant="outline" className="border-amber-500/30 text-amber-300">
-                                <Calendar className="w-3 h-3 mr-1" />
-                                {new Date(course.created_at).getFullYear()}
-                              </Badge>
-                            )}
-                          </div>
-
-                          {/* Action Buttons */}
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-border/50 hover:border-primary/50 hover:bg-primary/10"
-                            >
-                              <FolderOpen className="w-3.5 h-3.5 mr-1.5" />
-                              Files
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-500/50"
-                            >
-                              <ClipboardList className="w-3.5 h-3.5 mr-1.5" />
-                              View Exams
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-pink-500/30 text-pink-300 hover:bg-pink-500/10 hover:border-pink-500/50"
-                            >
-                              <BookOpen className="w-3.5 h-3.5 mr-1.5" />
-                              Lessons
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                          </TableCell>
+                          
+                          {/* Professor */}
+                          <TableCell className="text-muted-foreground">—</TableCell>
+                          
+                          {/* Course Code */}
+                          <TableCell className="text-muted-foreground">—</TableCell>
+                          
+                          {/* Students */}
+                          <TableCell>
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <Users className="w-4 h-4" />
+                              <span>{studentCounts[course.id] || 0}</span>
+                            </div>
+                          </TableCell>
+                          
+                          {/* Academic Period */}
+                          <TableCell>
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <Calendar className="w-4 h-4" />
+                              <span>{course.created_at ? new Date(course.created_at).getFullYear() : "—"}</span>
+                            </div>
+                          </TableCell>
+                          
+                          {/* Actions */}
+                          <TableCell>
+                            <div className="flex items-center justify-end gap-2">
+                              {/* Edit & Delete Icons */}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                onClick={() => handleEdit(course)}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => { setDeletingCourse(course); setIsDeleteOpen(true); }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                              
+                              {/* View Exams Button */}
+                              <Button
+                                size="sm"
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 px-3"
+                              >
+                                <ClipboardList className="w-4 h-4 mr-1.5" />
+                                View Exams
+                              </Button>
+                              
+                              {/* Files Button */}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-primary/50 text-primary hover:bg-primary/10 h-8 px-3"
+                              >
+                                <FolderOpen className="w-4 h-4 mr-1.5" />
+                                Files
+                              </Button>
+                              
+                              {/* Manage Students Button */}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10 h-8 px-3"
+                                onClick={() => navigate(`/dashboard/courses/${course.id}/students`)}
+                              >
+                                <Users className="w-4 h-4 mr-1.5" />
+                                Manage students
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </CardContent>
               </Card>
             )}
