@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useUserRole, AppRole } from "@/hooks/useUserRole";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
 import { 
   Users, 
   FileText, 
@@ -44,7 +45,10 @@ import {
   Loader2,
   ShieldCheck,
   ShieldAlert,
-  User
+  User,
+  Tag,
+  Plus,
+  Pencil
 } from "lucide-react";
 
 interface Profile {
@@ -81,6 +85,14 @@ interface Course {
   user_name?: string;
 }
 
+interface Subject {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 const Admin = () => {
   const navigate = useNavigate();
   const { isAdmin, isLoading: roleLoading } = useUserRole();
@@ -89,8 +101,16 @@ const Admin = () => {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [exams, setExams] = useState<Exam[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("users");
+  
+  // Subject management state
+  const [newSubjectName, setNewSubjectName] = useState("");
+  const [newSubjectDescription, setNewSubjectDescription] = useState("");
+  const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
+  const [editSubjectName, setEditSubjectName] = useState("");
+  const [editSubjectDescription, setEditSubjectDescription] = useState("");
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -122,7 +142,7 @@ const Admin = () => {
 
   const fetchAllData = async () => {
     setIsLoading(true);
-    await Promise.all([fetchUsers(), fetchExams(), fetchCourses()]);
+    await Promise.all([fetchUsers(), fetchExams(), fetchCourses(), fetchSubjects()]);
     setIsLoading(false);
   };
 
@@ -286,6 +306,116 @@ const Admin = () => {
     }
   };
 
+  const fetchSubjects = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("subjects")
+        .select("*")
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      setSubjects(data || []);
+    } catch (error) {
+      console.error("Error fetching subjects:", error);
+    }
+  };
+
+  const handleAddSubject = async () => {
+    if (!newSubjectName.trim()) {
+      toast({
+        title: "Error",
+        description: "Subject name is required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("subjects")
+        .insert({ 
+          name: newSubjectName.trim(), 
+          description: newSubjectDescription.trim() || null 
+        });
+
+      if (error) throw error;
+
+      toast({ title: "Subject Added" });
+      setNewSubjectName("");
+      setNewSubjectDescription("");
+      await fetchSubjects();
+    } catch (error: any) {
+      console.error("Error adding subject:", error);
+      toast({
+        title: "Error",
+        description: error.message?.includes("duplicate") 
+          ? "Subject already exists." 
+          : "Failed to add subject.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateSubject = async () => {
+    if (!editingSubject || !editSubjectName.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from("subjects")
+        .update({ 
+          name: editSubjectName.trim(), 
+          description: editSubjectDescription.trim() || null 
+        })
+        .eq("id", editingSubject.id);
+
+      if (error) throw error;
+
+      toast({ title: "Subject Updated" });
+      setEditingSubject(null);
+      setEditSubjectName("");
+      setEditSubjectDescription("");
+      await fetchSubjects();
+    } catch (error: any) {
+      console.error("Error updating subject:", error);
+      toast({
+        title: "Error",
+        description: error.message?.includes("duplicate") 
+          ? "Subject name already exists." 
+          : "Failed to update subject.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteSubject = async (id: string) => {
+    try {
+      const { error } = await supabase.from("subjects").delete().eq("id", id);
+      if (error) throw error;
+
+      toast({ title: "Subject Deleted" });
+      await fetchSubjects();
+    } catch (error) {
+      console.error("Error deleting subject:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete subject.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const startEditSubject = (subject: Subject) => {
+    setEditingSubject(subject);
+    setEditSubjectName(subject.name);
+    setEditSubjectDescription(subject.description || "");
+  };
+
+  const cancelEditSubject = () => {
+    setEditingSubject(null);
+    setEditSubjectName("");
+    setEditSubjectDescription("");
+  };
+
   const getRoleBadge = (role: AppRole) => {
     switch (role) {
       case "admin":
@@ -348,7 +478,7 @@ const Admin = () => {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -376,6 +506,15 @@ const Admin = () => {
                   <div className="text-2xl font-bold">{courses.length}</div>
                 </CardContent>
               </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium">Total Subjects</CardTitle>
+                  <Tag className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{subjects.length}</div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Tabs */}
@@ -392,6 +531,10 @@ const Admin = () => {
                 <TabsTrigger value="courses" className="flex items-center gap-2">
                   <BookOpen className="w-4 h-4" />
                   Courses ({courses.length})
+                </TabsTrigger>
+                <TabsTrigger value="subjects" className="flex items-center gap-2">
+                  <Tag className="w-4 h-4" />
+                  Subjects ({subjects.length})
                 </TabsTrigger>
               </TabsList>
 
@@ -589,6 +732,136 @@ const Admin = () => {
                             </TableCell>
                           </TableRow>
                         ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Subjects Tab */}
+              <TabsContent value="subjects">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Subject Management</CardTitle>
+                    <CardDescription>Manage subjects for exams and courses</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Add New Subject Form */}
+                    <div className="flex gap-4 p-4 border rounded-lg bg-muted/30">
+                      <Input
+                        placeholder="Subject name *"
+                        value={newSubjectName}
+                        onChange={(e) => setNewSubjectName(e.target.value)}
+                        className="max-w-xs"
+                      />
+                      <Input
+                        placeholder="Description (optional)"
+                        value={newSubjectDescription}
+                        onChange={(e) => setNewSubjectDescription(e.target.value)}
+                        className="flex-1"
+                      />
+                      <Button onClick={handleAddSubject}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Subject
+                      </Button>
+                    </div>
+
+                    {/* Subjects Table */}
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Created At</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {subjects.map((subject) => (
+                          <TableRow key={subject.id}>
+                            <TableCell className="font-medium">
+                              {editingSubject?.id === subject.id ? (
+                                <Input
+                                  value={editSubjectName}
+                                  onChange={(e) => setEditSubjectName(e.target.value)}
+                                  className="max-w-xs"
+                                />
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <Tag className="w-4 h-4 text-primary" />
+                                  {subject.name}
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {editingSubject?.id === subject.id ? (
+                                <Input
+                                  value={editSubjectDescription}
+                                  onChange={(e) => setEditSubjectDescription(e.target.value)}
+                                  placeholder="Description"
+                                />
+                              ) : (
+                                subject.description || "-"
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {new Date(subject.created_at).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              {editingSubject?.id === subject.id ? (
+                                <div className="flex gap-2">
+                                  <Button size="sm" onClick={handleUpdateSubject}>
+                                    Save
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={cancelEditSubject}>
+                                    Cancel
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="flex gap-2">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => startEditSubject(subject)}
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="text-destructive">
+                                        <Trash2 className="w-4 h-4" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete Subject</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to delete "{subject.name}"? This action cannot be undone.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => handleDeleteSubject(subject.id)}
+                                          className="bg-destructive text-destructive-foreground"
+                                        >
+                                          Delete
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {subjects.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                              No subjects yet. Add one above.
+                            </TableCell>
+                          </TableRow>
+                        )}
                       </TableBody>
                     </Table>
                   </CardContent>
