@@ -45,7 +45,8 @@ import {
   Trash2, 
   ArrowLeft,
   Users,
-  Pencil
+  Pencil,
+  X
 } from "lucide-react";
 
 const CourseStudents = () => {
@@ -164,17 +165,27 @@ const CourseStudents = () => {
         <main className="flex-1 p-8">
           <div className="max-w-6xl mx-auto">
             {/* Header */}
-            <div className="flex items-center gap-4 mb-8">
-              <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/courses")}>
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <div className="flex items-center gap-3">
-                <Users className="w-6 h-6 text-primary" />
-                <div>
-                  <h1 className="text-2xl font-bold">{courseName || "Course"}</h1>
-                  <p className="text-muted-foreground">Student Management</p>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard/courses")}>
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+                <div className="flex items-center gap-3">
+                  <Users className="w-6 h-6 text-primary" />
+                  <div>
+                    <h1 className="text-2xl font-bold">{courseName || "Course"}</h1>
+                    <p className="text-muted-foreground">Student Management</p>
+                  </div>
                 </div>
               </div>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => navigate("/dashboard/courses")}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-5 h-5" />
+              </Button>
             </div>
 
             {/* Add Students Cards */}
