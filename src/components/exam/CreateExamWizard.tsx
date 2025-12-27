@@ -4,9 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCourses, Course } from "@/hooks/useCourses";
 import StepSidebar from "./wizard/StepSidebar";
+import MobileStepIndicator from "./wizard/MobileStepIndicator";
 import ExamDetailsStep from "./wizard/ExamDetailsStep";
 import AddQuestionsStep from "./wizard/AddQuestionsStep";
 import ReviewStep from "./wizard/ReviewStep";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export interface Question {
   id: number;
@@ -101,7 +104,6 @@ export default function CreateExamWizard() {
     setIsSaving(true);
 
     try {
-      // Combine date and time for start and end
       let startDateTime: string | null = null;
       let endDateTime: string | null = null;
 
@@ -165,52 +167,117 @@ export default function CreateExamWizard() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left Sidebar - Steps */}
-      <StepSidebar
-        currentStep={currentStep}
-        getStepStatus={getStepStatus}
-        onStepClick={(step) => {
-          if (step < currentStep || (step === 2 && canProceedToStep2) || (step === 3 && canProceedToStep3)) {
-            setCurrentStep(step);
-          }
-        }}
-        questions={questions}
-        showQuestionsList={currentStep === 2}
-      />
+    <div className="min-h-screen bg-background flex flex-col lg:flex-row">
+      {/* Mobile Header */}
+      <header className="lg:hidden sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
+        <div className="flex items-center justify-between px-4 py-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="h-9 w-9"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-lg font-semibold">Create Exam</h1>
+          <div className="w-9" />
+        </div>
+        
+        {/* Mobile Step Indicator */}
+        <MobileStepIndicator
+          currentStep={currentStep}
+          getStepStatus={getStepStatus}
+        />
+      </header>
+
+      {/* Desktop Sidebar - Hidden on Mobile */}
+      <div className="hidden lg:block">
+        <StepSidebar
+          currentStep={currentStep}
+          getStepStatus={getStepStatus}
+          onStepClick={(step) => {
+            if (step < currentStep || (step === 2 && canProceedToStep2) || (step === 3 && canProceedToStep3)) {
+              setCurrentStep(step);
+            }
+          }}
+          questions={questions}
+          showQuestionsList={currentStep === 2}
+        />
+      </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-8 overflow-auto">
-        {currentStep === 1 && (
-          <ExamDetailsStep
-            formData={formData}
-            setFormData={setFormData}
-            courses={courses}
-            coursesLoading={coursesLoading}
-            onNext={handleNextStep}
-          />
-        )}
+      <div className="flex-1 overflow-auto pb-24 lg:pb-8">
+        <div className="lg:p-8">
+          {currentStep === 1 && (
+            <ExamDetailsStep
+              formData={formData}
+              setFormData={setFormData}
+              courses={courses}
+              coursesLoading={coursesLoading}
+              onNext={handleNextStep}
+            />
+          )}
 
-        {currentStep === 2 && (
-          <AddQuestionsStep
-            questions={questions}
-            setQuestions={setQuestions}
-            onNext={handleNextStep}
-            onPrev={handlePrevStep}
-          />
-        )}
+          {currentStep === 2 && (
+            <AddQuestionsStep
+              questions={questions}
+              setQuestions={setQuestions}
+              onNext={handleNextStep}
+              onPrev={handlePrevStep}
+            />
+          )}
 
-        {currentStep === 3 && (
-          <ReviewStep
-            formData={formData}
-            questions={questions}
-            courses={courses}
-            onPrev={handlePrevStep}
-            onPublish={handlePublishExam}
-            isSaving={isSaving}
-          />
-        )}
+          {currentStep === 3 && (
+            <ReviewStep
+              formData={formData}
+              questions={questions}
+              courses={courses}
+              onPrev={handlePrevStep}
+              onPublish={handlePublishExam}
+              isSaving={isSaving}
+            />
+          )}
+        </div>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <footer className="lg:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t border-border p-4 z-50">
+        <div className="flex gap-3">
+          {currentStep > 1 && (
+            <Button
+              variant="outline"
+              onClick={handlePrevStep}
+              className="flex-1 h-12"
+            >
+              Back
+            </Button>
+          )}
+          {currentStep < 3 ? (
+            <Button
+              onClick={handleNextStep}
+              className="flex-1 h-12 bg-primary hover:bg-primary/90"
+              disabled={currentStep === 1 && !formData.examName.trim()}
+            >
+              {currentStep === 1 ? "Add Questions" : "Review"}
+            </Button>
+          ) : (
+            <Button
+              onClick={handlePublishExam}
+              className="flex-1 h-12 bg-green-600 hover:bg-green-700"
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Publishing...
+                </>
+              ) : (
+                "Publish Exam"
+              )}
+            </Button>
+          )}
+        </div>
+      </footer>
     </div>
   );
 }

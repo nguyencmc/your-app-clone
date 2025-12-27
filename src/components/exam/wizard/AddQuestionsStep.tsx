@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Brain, Clock, Copy, Image, ListChecks, Loader2, Minus, Paperclip, Plus, Send, Sparkles, X, Bold, Italic, Underline } from "lucide-react";
+import { Brain, Clock, Copy, Image, ListChecks, Loader2, Minus, Paperclip, Plus, Send, Sparkles, X, Bold, Italic, Underline, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Question } from "../CreateExamWizard";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
 interface AddQuestionsStepProps {
   questions: Question[];
   setQuestions: React.Dispatch<React.SetStateAction<Question[]>>;
@@ -23,9 +25,22 @@ export default function AddQuestionsStep({
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
-  const [editMode, setEditMode] = useState<"raw" | "split" | "preview">("preview");
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(new Set());
 
   const selectedQuestion = selectedQuestionIndex !== null ? questions[selectedQuestionIndex] : null;
+
+  const toggleQuestionExpand = (index: number) => {
+    setExpandedQuestions(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
 
   const handleGenerateQuestions = async () => {
     if (!aiPrompt.trim()) {
@@ -76,6 +91,7 @@ export default function AddQuestionsStep({
 
       setQuestions((prev) => [...prev, ...newQuestions]);
       setAiPrompt("");
+      setShowAiPanel(false);
 
       toast({
         title: "Questions Generated!",
@@ -105,6 +121,7 @@ export default function AddQuestionsStep({
     };
     setQuestions((prev) => [...prev, newQuestion]);
     setSelectedQuestionIndex(questions.length);
+    setExpandedQuestions(prev => new Set(prev).add(questions.length));
   };
 
   const handleAddLongAnswer = () => {
@@ -118,6 +135,7 @@ export default function AddQuestionsStep({
     };
     setQuestions((prev) => [...prev, newQuestion]);
     setSelectedQuestionIndex(questions.length);
+    setExpandedQuestions(prev => new Set(prev).add(questions.length));
   };
 
   const handleDeleteQuestion = (index: number) => {
@@ -127,268 +145,257 @@ export default function AddQuestionsStep({
     } else if (selectedQuestionIndex !== null && selectedQuestionIndex > index) {
       setSelectedQuestionIndex(selectedQuestionIndex - 1);
     }
+    setExpandedQuestions(prev => {
+      const newSet = new Set<number>();
+      prev.forEach(i => {
+        if (i < index) newSet.add(i);
+        else if (i > index) newSet.add(i - 1);
+      });
+      return newSet;
+    });
   };
 
-  const handleUpdateQuestion = (updatedQuestion: Question) => {
-    if (selectedQuestionIndex === null) return;
+  const handleUpdateQuestion = (index: number, updatedQuestion: Question) => {
     setQuestions((prev) =>
-      prev.map((q, i) => (i === selectedQuestionIndex ? updatedQuestion : q))
+      prev.map((q, i) => (i === index ? updatedQuestion : q))
     );
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-4 lg:space-y-6 p-4 lg:p-0">
       {/* Header */}
-      <div className="rounded-xl border border-border/40 bg-card/50 p-6">
-        <div className="flex items-center justify-between">
+      <div className="rounded-xl border border-border/40 bg-card/50 p-4 lg:p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">Add Questions</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-xl lg:text-2xl font-bold">Add Questions</h1>
+            <p className="text-muted-foreground text-sm lg:text-base mt-1">
               Create and manage your exam questions
             </p>
           </div>
-          <Button onClick={onNext} className="px-6">
+          <Button onClick={onNext} className="hidden lg:flex px-6">
             Next Step
           </Button>
         </div>
       </div>
 
-      {/* AI Generation Card */}
-      <div className="rounded-xl border-2 border-yellow-500/50 bg-gradient-to-br from-yellow-500/10 to-transparent p-6">
-        <div className="flex items-center justify-between mb-4">
+      {/* AI Generation Card - Collapsible on Mobile */}
+      <div className="rounded-xl border-2 border-yellow-500/50 bg-gradient-to-br from-yellow-500/10 to-transparent overflow-hidden">
+        <button
+          onClick={() => setShowAiPanel(!showAiPanel)}
+          className="w-full p-4 flex items-center justify-between lg:hidden"
+        >
           <div className="flex items-center gap-3">
-            <Brain className="w-6 h-6 text-pink-400" />
-            <h2 className="text-lg font-semibold text-pink-400">
-              Generate Questions with AI
-            </h2>
+            <Brain className="w-5 h-5 text-pink-400" />
+            <span className="font-semibold text-pink-400">Generate with AI</span>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Copy className="w-4 h-4" />
-              Clone Exam
-            </Button>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/40 text-sm text-muted-foreground">
-              <Clock className="w-4 h-4" />
-              4/5 uses left
+          {showAiPanel ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+        </button>
+
+        <div className={`p-4 lg:p-6 ${showAiPanel ? 'block' : 'hidden lg:block'} ${showAiPanel ? '' : 'lg:pt-6'}`}>
+          <div className="hidden lg:flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Brain className="w-6 h-6 text-pink-400" />
+              <h2 className="text-lg font-semibold text-pink-400">
+                Generate Questions with AI
+              </h2>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm" className="gap-2">
+                <Copy className="w-4 h-4" />
+                Clone Exam
+              </Button>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/40 text-sm text-muted-foreground">
+                <Clock className="w-4 h-4" />
+                4/5 uses left
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="relative">
-          <Textarea
-            placeholder="Describe the questions you want to generate..."
-            value={aiPrompt}
-            onChange={(e) => setAiPrompt(e.target.value)}
-            className="min-h-[100px] bg-background/50 border-border/40 resize-none pr-24"
-          />
-          <div className="absolute bottom-3 right-3 flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <Paperclip className="w-4 h-4" />
-              Attach
-            </Button>
-            <Button
-              size="icon"
-              className="rounded-full bg-gradient-to-r from-primary to-purple-500"
-              onClick={handleGenerateQuestions}
-              disabled={isGenerating}
-            >
-              {isGenerating ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </Button>
+          <div className="relative">
+            <Textarea
+              placeholder="Describe the questions you want to generate..."
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              className="min-h-[80px] lg:min-h-[100px] bg-background/50 border-border/40 resize-none pr-12 lg:pr-24"
+            />
+            <div className="absolute bottom-3 right-3 flex items-center gap-2">
+              <Button variant="ghost" size="sm" className="hidden lg:flex gap-2">
+                <Paperclip className="w-4 h-4" />
+                Attach
+              </Button>
+              <Button
+                size="icon"
+                className="rounded-full bg-gradient-to-r from-primary to-purple-500 h-9 w-9"
+                onClick={handleGenerateQuestions}
+                disabled={isGenerating}
+              >
+                {isGenerating ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Add Question Buttons */}
+      <div className="grid grid-cols-2 gap-3">
+        <Button onClick={handleAddMultipleChoice} variant="outline" className="h-12 gap-2 text-sm">
+          <Plus className="w-4 h-4" />
+          <span className="hidden sm:inline">Add</span> Multiple Choice
+        </Button>
+        <Button onClick={handleAddLongAnswer} variant="outline" className="h-12 gap-2 text-sm">
+          <Plus className="w-4 h-4" />
+          <span className="hidden sm:inline">Add</span> Long Answer
+        </Button>
+      </div>
+
       {/* Questions Area */}
       {questions.length === 0 ? (
-        // Empty State
-        <div className="rounded-xl border border-border/40 bg-card/50 p-12 text-center">
-          <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
-            <ListChecks className="w-8 h-8 text-primary" />
+        <div className="rounded-xl border border-border/40 bg-card/50 p-8 lg:p-12 text-center">
+          <div className="w-14 h-14 lg:w-16 lg:h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
+            <ListChecks className="w-7 h-7 lg:w-8 lg:h-8 text-primary" />
           </div>
-          <h3 className="text-xl font-semibold mb-2">Create your practice questions</h3>
-          <p className="text-muted-foreground mb-6">Get started by adding questions</p>
-          <div className="flex items-center justify-center gap-4">
-            <Button onClick={handleAddMultipleChoice} className="gap-2">
-              <Sparkles className="w-4 h-4" />
-              Add Multiple Choice
-            </Button>
-            <Button variant="outline" onClick={handleAddLongAnswer} className="gap-2">
-              <Plus className="w-4 h-4" />
-              Add Long Answer
-            </Button>
-          </div>
+          <h3 className="text-lg lg:text-xl font-semibold mb-2">Create your practice questions</h3>
+          <p className="text-muted-foreground text-sm mb-6">Get started by adding questions</p>
         </div>
       ) : (
-        // Question Editor
-        <div className="rounded-xl border border-border/40 bg-card/50 overflow-hidden">
-          {selectedQuestion ? (
-            <>
-              {/* Question Header */}
-              <div className="p-4 border-b border-border/40 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
-                    <span className="text-sm">⋮⋮</span>
+        <div className="space-y-3">
+          {questions.map((question, index) => (
+            <Collapsible
+              key={question.id}
+              open={expandedQuestions.has(index)}
+              onOpenChange={() => toggleQuestionExpand(index)}
+            >
+              <div className="rounded-xl border border-border/40 bg-card/50 overflow-hidden">
+                <CollapsibleTrigger className="w-full p-4 flex items-center gap-3 hover:bg-muted/30 transition-colors">
+                  <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center text-sm font-medium flex-shrink-0">
+                    Q{index + 1}
                   </div>
-                  <span className="font-semibold">Question {selectedQuestionIndex! + 1}</span>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <Button size="sm" className="gap-2 bg-pink-500/20 text-pink-400 hover:bg-pink-500/30 relative">
-                    <Sparkles className="w-4 h-4" />
-                    Perfection
-                    <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-pink-500 text-white text-xs flex items-center justify-center">
-                      14
-                    </span>
-                  </Button>
-                  
-                  <Button size="sm" variant="outline" className="gap-2 relative">
-                    <Image className="w-4 h-4" />
-                    Add Image
-                    <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-cyan-500 text-white text-xs flex items-center justify-center">
-                      10
-                    </span>
-                  </Button>
+                  <div className="flex-1 text-left min-w-0">
+                    <p className="font-medium truncate text-sm lg:text-base">{question.question}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {question.type === "multiple_choice" ? "Multiple Choice" : "Long Answer"} • {question.points} pts
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {expandedQuestions.has(index) ? (
+                      <ChevronUp className="w-5 h-5 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                    )}
+                  </div>
+                </CollapsibleTrigger>
 
-                  <div className="flex items-center gap-1 px-2 py-1 rounded bg-muted/50 border border-border/40">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => {
-                        if (selectedQuestion.points > 1) {
-                          handleUpdateQuestion({ ...selectedQuestion, points: selectedQuestion.points - 1 });
+                <CollapsibleContent>
+                  <div className="p-4 pt-0 border-t border-border/40 space-y-4">
+                    {/* Question Text */}
+                    <div className="space-y-2">
+                      <Label className="text-sm text-muted-foreground">Question</Label>
+                      <Textarea
+                        value={question.question}
+                        onChange={(e) =>
+                          handleUpdateQuestion(index, { ...question, question: e.target.value })
                         }
-                      }}
-                    >
-                      <Minus className="w-3 h-3" />
-                    </Button>
-                    <span className="w-6 text-center text-sm">{selectedQuestion.points}</span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={() => {
-                        handleUpdateQuestion({ ...selectedQuestion, points: selectedQuestion.points + 1 });
-                      }}
-                    >
-                      <Plus className="w-3 h-3" />
-                    </Button>
-                  </div>
+                        className="min-h-[80px] lg:min-h-[100px] bg-muted/30 border-border/40"
+                        placeholder="Enter your question..."
+                      />
+                    </div>
 
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-destructive"
-                    onClick={() => handleDeleteQuestion(selectedQuestionIndex!)}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Editor Toolbar */}
-              <div className="p-3 border-b border-border/40 flex items-center justify-between">
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Bold className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Italic className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Underline className="w-4 h-4" />
-                  </Button>
-                  <div className="w-px h-6 bg-border mx-2" />
-                  <Button variant="ghost" size="sm" className="text-xs">
-                    H<sub>1</sub>
-                  </Button>
-                  <Button variant="ghost" size="sm" className="text-xs">
-                    H<sub>2</sub>
-                  </Button>
-                </div>
-
-                <div className="flex items-center gap-1">
-                  {(["raw", "split", "preview"] as const).map((mode) => (
-                    <Button
-                      key={mode}
-                      variant={editMode === mode ? "secondary" : "ghost"}
-                      size="sm"
-                      onClick={() => setEditMode(mode)}
-                      className="capitalize"
-                    >
-                      {mode}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Question Content */}
-              <div className="p-6">
-                <Textarea
-                  value={selectedQuestion.question}
-                  onChange={(e) =>
-                    handleUpdateQuestion({ ...selectedQuestion, question: e.target.value })
-                  }
-                  className="min-h-[200px] bg-muted/30 border-border/40"
-                  placeholder="Enter your question..."
-                />
-
-                {/* Options for Multiple Choice */}
-                {selectedQuestion.type === "multiple_choice" && selectedQuestion.options && (
-                  <div className="mt-4 space-y-2">
-                    <Label className="text-sm text-muted-foreground">Answer Options</Label>
-                    {selectedQuestion.options.map((option, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">
-                          {String.fromCharCode(65 + index)}
-                        </span>
-                        <Input
-                          value={option}
-                          onChange={(e) => {
-                            const newOptions = [...selectedQuestion.options!];
-                            newOptions[index] = e.target.value;
-                            handleUpdateQuestion({ ...selectedQuestion, options: newOptions });
-                          }}
-                          className="flex-1"
-                        />
-                        <Button
-                          variant={selectedQuestion.correctAnswer === option ? "default" : "outline"}
-                          size="sm"
-                          onClick={() =>
-                            handleUpdateQuestion({ ...selectedQuestion, correctAnswer: option })
-                          }
-                        >
-                          {selectedQuestion.correctAnswer === option ? "Correct" : "Set as Correct"}
-                        </Button>
+                    {/* Options for Multiple Choice */}
+                    {question.type === "multiple_choice" && question.options && (
+                      <div className="space-y-2">
+                        <Label className="text-sm text-muted-foreground">Answer Options</Label>
+                        <div className="space-y-2">
+                          {question.options.map((option, optIndex) => (
+                            <div key={optIndex} className="flex items-center gap-2">
+                              <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs flex-shrink-0">
+                                {String.fromCharCode(65 + optIndex)}
+                              </span>
+                              <Input
+                                value={option}
+                                onChange={(e) => {
+                                  const newOptions = [...question.options!];
+                                  newOptions[optIndex] = e.target.value;
+                                  handleUpdateQuestion(index, { ...question, options: newOptions });
+                                }}
+                                className="flex-1 h-10"
+                              />
+                              <Button
+                                variant={question.correctAnswer === option ? "default" : "outline"}
+                                size="sm"
+                                onClick={() =>
+                                  handleUpdateQuestion(index, { ...question, correctAnswer: option })
+                                }
+                                className="h-10 px-2 lg:px-3 text-xs lg:text-sm"
+                              >
+                                {question.correctAnswer === option ? "✓" : "Set"}
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ))}
+                    )}
+
+                    {/* Points and Delete */}
+                    <div className="flex items-center justify-between pt-2">
+                      <div className="flex items-center gap-2">
+                        <Label className="text-sm text-muted-foreground">Points:</Label>
+                        <div className="flex items-center gap-1 px-2 py-1 rounded bg-muted/50 border border-border/40">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => {
+                              if (question.points > 1) {
+                                handleUpdateQuestion(index, { ...question, points: question.points - 1 });
+                              }
+                            }}
+                          >
+                            <Minus className="w-3 h-3" />
+                          </Button>
+                          <span className="w-6 text-center text-sm">{question.points}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => {
+                              handleUpdateQuestion(index, { ...question, points: question.points + 1 });
+                            }}
+                          >
+                            <Plus className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDeleteQuestion(index)}
+                      >
+                        <X className="w-4 h-4 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
                   </div>
-                )}
+                </CollapsibleContent>
               </div>
-            </>
-          ) : (
-            <div className="p-12 text-center">
-              <p className="text-muted-foreground">Select a question to edit</p>
-            </div>
-          )}
+            </Collapsible>
+          ))}
         </div>
       )}
 
-      {/* Quick Add Buttons */}
+      {/* Summary */}
       {questions.length > 0 && (
-        <div className="flex items-center gap-4">
-          <Button onClick={handleAddMultipleChoice} variant="outline" className="gap-2">
-            <Plus className="w-4 h-4" />
-            Add Multiple Choice
-          </Button>
-          <Button onClick={handleAddLongAnswer} variant="outline" className="gap-2">
-            <Plus className="w-4 h-4" />
-            Add Long Answer
-          </Button>
+        <div className="bg-muted/30 rounded-lg p-3 flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">
+            Total: {questions.length} questions
+          </span>
+          <span className="text-sm font-medium">
+            {questions.reduce((sum, q) => sum + q.points, 0)} points
+          </span>
         </div>
       )}
     </div>
