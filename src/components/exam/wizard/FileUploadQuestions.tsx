@@ -86,70 +86,111 @@ export default function FileUploadQuestions({ onQuestionsLoaded, onClose }: File
 
   const parseTXT = (content: string): ParsedQuestion[] => {
     const questions: ParsedQuestion[] = [];
-    const blocks = content.split(/\n\s*\n/);
+    const lines = content.split('\n');
+    
+    // Regex patterns
+    const questionPattern = /^(question|câu hỏi|câu)\s*(\d+)?[\.\:\)]*\s*/i;
+    const optionPattern = /^([A-H])[\.\)]\s*(.+)/i;
+    const answerPattern = /^(answer|correct|đáp án|dap an)[:\s]+([A-H])/i;
+    const explanationPattern = /^(explanation|giải thích|giai thich)[:\s]+(.+)/i;
 
-    for (const block of blocks) {
-      const lines = block.split('\n').map(l => l.trim()).filter(l => l);
-      if (lines.length < 3) continue;
+    let currentQuestion: string | null = null;
+    let currentOptions: string[] = [];
+    let currentCorrectAnswer = '';
+    let currentExplanation = '';
+    let isReadingQuestion = false;
+    let questionLines: string[] = [];
 
-      // First line is the question
-      let questionText = lines[0];
-      // Remove question number if present (e.g., "1.", "Q1:", etc.)
-      questionText = questionText.replace(/^(\d+[\.\):]|Q\d+[\.\):])\s*/i, '');
-
-      const options: string[] = [];
-      let correctAnswer = '';
-      let explanation = '';
-
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i];
-        
-        // Check if it's an option (A-H)
-        const optionMatch = line.match(/^([A-H])[\.\)]\s*(.+)/i);
-        if (optionMatch) {
-          const letter = optionMatch[1].toUpperCase();
-          const text = optionMatch[2];
-          
-          // Check if this option is marked as correct (with *, [x], (correct), etc.)
-          if (text.includes('*') || text.toLowerCase().includes('[x]') || text.toLowerCase().includes('(correct)')) {
-            correctAnswer = `${letter}. ${text.replace(/[\*\[\]x]|\(correct\)/gi, '').trim()}`;
-            options.push(correctAnswer);
-          } else {
-            options.push(`${letter}. ${text}`);
-          }
-          continue;
-        }
-
-        // Check for answer line
-        const answerMatch = line.match(/^(Answer|Correct|Đáp án)[:\s]+([A-H])/i);
-        if (answerMatch) {
-          const answerLetter = answerMatch[2].toUpperCase();
-          const answerOption = options.find(opt => opt.startsWith(answerLetter));
-          if (answerOption) {
-            correctAnswer = answerOption;
-          }
-          continue;
-        }
-
-        // Check for explanation line
-        const explainMatch = line.match(/^(Explanation|Giải thích)[:\s]+(.+)/i);
-        if (explainMatch) {
-          explanation = explainMatch[2];
-          continue;
-        }
-      }
-
-      // Only add if we have valid options (2-8)
-      if (questionText && options.length >= 2 && options.length <= 8) {
+    const saveCurrentQuestion = () => {
+      if (currentQuestion && currentOptions.length >= 2 && currentOptions.length <= 8) {
         questions.push({
-          question: questionText,
+          question: currentQuestion,
           type: "multiple_choice",
-          options,
-          correctAnswer: correctAnswer || options[0],
-          explanation,
+          options: currentOptions,
+          correctAnswer: currentCorrectAnswer || currentOptions[0],
+          explanation: currentExplanation,
         });
       }
+      // Reset
+      currentQuestion = null;
+      currentOptions = [];
+      currentCorrectAnswer = '';
+      currentExplanation = '';
+      isReadingQuestion = false;
+      questionLines = [];
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      // Check if this line starts a new question
+      const questionMatch = line.match(questionPattern);
+      if (questionMatch) {
+        // Save previous question if exists
+        saveCurrentQuestion();
+        
+        // Extract question text after the prefix
+        const questionText = line.replace(questionPattern, '').trim();
+        if (questionText) {
+          questionLines.push(questionText);
+        }
+        isReadingQuestion = true;
+        continue;
+      }
+
+      // Check if this line is an option (A., B., etc.)
+      const optionMatch = line.match(optionPattern);
+      if (optionMatch) {
+        // If we were reading question text, finalize it
+        if (isReadingQuestion && questionLines.length > 0) {
+          currentQuestion = questionLines.join(' ').trim();
+          isReadingQuestion = false;
+        }
+
+        const letter = optionMatch[1].toUpperCase();
+        let text = optionMatch[2].trim();
+        
+        // Check if this option is marked as correct (with *, [x], (correct), etc.)
+        if (text.includes('*') || text.toLowerCase().includes('[x]') || text.toLowerCase().includes('(correct)')) {
+          text = text.replace(/[\*\[\]x]|\(correct\)/gi, '').trim();
+          currentCorrectAnswer = `${letter}. ${text}`;
+          currentOptions.push(currentCorrectAnswer);
+        } else {
+          currentOptions.push(`${letter}. ${text}`);
+        }
+        continue;
+      }
+
+      // Check for answer line
+      const answerMatch = line.match(answerPattern);
+      if (answerMatch) {
+        const answerLetter = answerMatch[2].toUpperCase();
+        const answerOption = currentOptions.find(opt => opt.startsWith(answerLetter));
+        if (answerOption) {
+          currentCorrectAnswer = answerOption;
+        }
+        continue;
+      }
+
+      // Check for explanation line
+      const explainMatch = line.match(explanationPattern);
+      if (explainMatch) {
+        currentExplanation = explainMatch[2].trim();
+        continue;
+      }
+
+      // If we're reading a multi-line question, append this line
+      if (isReadingQuestion) {
+        questionLines.push(line);
+      }
     }
+
+    // Don't forget to save the last question
+    if (questionLines.length > 0 && !currentQuestion) {
+      currentQuestion = questionLines.join(' ').trim();
+    }
+    saveCurrentQuestion();
 
     return questions;
   };
