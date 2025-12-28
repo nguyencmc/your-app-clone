@@ -1,9 +1,14 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Upload, FileText, X, Check, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Question } from "../CreateExamWizard";
+import mammoth from "mammoth";
+import * as pdfjsLib from "pdfjs-dist";
+
+// Set PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface FileUploadQuestionsProps {
   onQuestionsLoaded: (questions: Question[]) => void;
@@ -195,30 +200,71 @@ export default function FileUploadQuestions({ onQuestionsLoaded, onClose }: File
     return questions;
   };
 
+  const parseDOCX = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return result.value;
+  };
+
+  const parsePDF = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ');
+      fullText += pageText + '\n';
+    }
+    
+    return fullText;
+  };
+
   const handleFile = async (uploadedFile: File) => {
     setError(null);
     setFile(uploadedFile);
     setIsProcessing(true);
 
     try {
-      const content = await uploadedFile.text();
       const fileName = uploadedFile.name.toLowerCase();
+      let content: string;
       
-      let parsed: ParsedQuestion[];
       if (fileName.endsWith('.csv')) {
-        parsed = parseCSV(content);
+        content = await uploadedFile.text();
+        const parsed = parseCSV(content);
+        if (parsed.length === 0) {
+          throw new Error('No valid questions found in the file. Please check the format.');
+        }
+        setParsedQuestions(parsed);
       } else if (fileName.endsWith('.txt')) {
-        parsed = parseTXT(content);
+        content = await uploadedFile.text();
+        const parsed = parseTXT(content);
+        if (parsed.length === 0) {
+          throw new Error('No valid questions found in the file. Please check the format.');
+        }
+        setParsedQuestions(parsed);
+      } else if (fileName.endsWith('.docx')) {
+        content = await parseDOCX(uploadedFile);
+        const parsed = parseTXT(content); // Use TXT parser for extracted text
+        if (parsed.length === 0) {
+          throw new Error('No valid questions found in the DOCX file. Please check the format.');
+        }
+        setParsedQuestions(parsed);
+      } else if (fileName.endsWith('.pdf')) {
+        content = await parsePDF(uploadedFile);
+        const parsed = parseTXT(content); // Use TXT parser for extracted text
+        if (parsed.length === 0) {
+          throw new Error('No valid questions found in the PDF file. Please check the format.');
+        }
+        setParsedQuestions(parsed);
       } else {
-        throw new Error('Unsupported file format. Please use .csv or .txt files.');
+        throw new Error('Unsupported file format. Please use .txt, .csv, .docx or .pdf files.');
       }
-
-      if (parsed.length === 0) {
-        throw new Error('No valid questions found in the file. Please check the format.');
-      }
-
-      setParsedQuestions(parsed);
     } catch (err) {
+      console.error('File parsing error:', err);
       setError(err instanceof Error ? err.message : 'Failed to parse file');
       setParsedQuestions([]);
     } finally {
@@ -296,12 +342,12 @@ export default function FileUploadQuestions({ onQuestionsLoaded, onClose }: File
               Drag and drop a file here, or click to browse
             </p>
             <p className="text-xs text-muted-foreground">
-              Supports .txt and .csv files
+              Supports .txt, .csv, .docx and .pdf files
             </p>
             <input
               ref={fileInputRef}
               type="file"
-              accept=".txt,.csv"
+              accept=".txt,.csv,.docx,.pdf"
               onChange={handleFileInput}
               className="hidden"
             />
@@ -386,9 +432,9 @@ export default function FileUploadQuestions({ onQuestionsLoaded, onClose }: File
         <div className="mt-4 p-3 bg-muted/20 rounded-lg">
           <p className="text-xs font-medium text-muted-foreground mb-2">File Format Guide:</p>
           <div className="text-xs text-muted-foreground space-y-1">
-            <p><strong>TXT format:</strong></p>
+            <p><strong>TXT / DOCX / PDF format:</strong></p>
             <pre className="bg-muted/30 p-2 rounded text-[10px] overflow-x-auto">
-{`1. What is the capital of France?
+{`Câu 1: What is the capital of France?
 A. London
 B. Paris*
 C. Berlin
@@ -396,7 +442,7 @@ D. Madrid
 Answer: B
 Explanation: Paris is the capital of France.
 
-2. Which planet is largest?
+Câu 2: Which planet is largest?
 A. Earth
 B. Mars
 C. Jupiter
