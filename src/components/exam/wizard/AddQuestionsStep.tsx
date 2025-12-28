@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Brain, Clock, Copy, Image, ListChecks, Loader2, Minus, Paperclip, Plus, Send, Sparkles, X, Bold, Italic, Underline, ChevronDown, ChevronUp } from "lucide-react";
+import { Brain, Clock, Copy, ListChecks, Loader2, Minus, Plus, Send, X, ChevronDown, ChevronUp, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Question } from "../CreateExamWizard";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import FileUploadQuestions from "./FileUploadQuestions";
 
 interface AddQuestionsStepProps {
   questions: Question[];
@@ -24,6 +25,7 @@ export default function AddQuestionsStep({
   const { toast } = useToast();
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showFileUpload, setShowFileUpload] = useState(false);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
   const [showAiPanel, setShowAiPanel] = useState(false);
   const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(new Set());
@@ -109,6 +111,14 @@ export default function AddQuestionsStep({
     }
   };
 
+  const handleFileUploadQuestions = (uploadedQuestions: Question[]) => {
+    setQuestions((prev) => [...prev, ...uploadedQuestions]);
+    toast({
+      title: "Questions Imported!",
+      description: `Successfully imported ${uploadedQuestions.length} questions from file.`,
+    });
+  };
+
   const handleAddMultipleChoice = () => {
     const newQuestion: Question = {
       id: Date.now(),
@@ -122,6 +132,33 @@ export default function AddQuestionsStep({
     setQuestions((prev) => [...prev, newQuestion]);
     setSelectedQuestionIndex(questions.length);
     setExpandedQuestions(prev => new Set(prev).add(questions.length));
+  };
+
+  const handleAddOption = (questionIndex: number) => {
+    const question = questions[questionIndex];
+    if (!question.options || question.options.length >= 8) return;
+    
+    const newOptions = [...question.options, `Option ${String.fromCharCode(65 + question.options.length)}`];
+    handleUpdateQuestion(questionIndex, { ...question, options: newOptions });
+  };
+
+  const handleRemoveOption = (questionIndex: number, optionIndex: number) => {
+    const question = questions[questionIndex];
+    if (!question.options || question.options.length <= 2) return;
+    
+    const newOptions = question.options.filter((_, i) => i !== optionIndex);
+    let newCorrectAnswer = question.correctAnswer;
+    
+    // If removed option was the correct answer, set first option as correct
+    if (question.correctAnswer === question.options[optionIndex]) {
+      newCorrectAnswer = newOptions[0];
+    }
+    
+    handleUpdateQuestion(questionIndex, { 
+      ...question, 
+      options: newOptions,
+      correctAnswer: newCorrectAnswer 
+    });
   };
 
   const handleAddLongAnswer = () => {
@@ -219,9 +256,14 @@ export default function AddQuestionsStep({
               className="min-h-[80px] lg:min-h-[100px] bg-background/50 border-border/40 resize-none pr-12 lg:pr-24"
             />
             <div className="absolute bottom-3 right-3 flex items-center gap-2">
-              <Button variant="ghost" size="sm" className="hidden lg:flex gap-2">
-                <Paperclip className="w-4 h-4" />
-                Attach
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="hidden lg:flex gap-2"
+                onClick={() => setShowFileUpload(true)}
+              >
+                <Upload className="w-4 h-4" />
+                Upload
               </Button>
               <Button
                 size="icon"
@@ -240,15 +282,27 @@ export default function AddQuestionsStep({
         </div>
       </div>
 
+      {/* File Upload Panel */}
+      {showFileUpload && (
+        <FileUploadQuestions 
+          onQuestionsLoaded={handleFileUploadQuestions}
+          onClose={() => setShowFileUpload(false)}
+        />
+      )}
+
       {/* Add Question Buttons */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         <Button onClick={handleAddMultipleChoice} variant="outline" className="h-12 gap-2 text-sm">
           <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Add</span> Multiple Choice
+          <span className="hidden sm:inline">Add</span> MC
         </Button>
         <Button onClick={handleAddLongAnswer} variant="outline" className="h-12 gap-2 text-sm">
           <Plus className="w-4 h-4" />
-          <span className="hidden sm:inline">Add</span> Long Answer
+          <span className="hidden sm:inline">Add</span> Long
+        </Button>
+        <Button onClick={() => setShowFileUpload(true)} variant="outline" className="h-12 gap-2 text-sm">
+          <Upload className="w-4 h-4" />
+          <span className="hidden sm:inline">Upload</span> File
         </Button>
       </div>
 
@@ -307,7 +361,22 @@ export default function AddQuestionsStep({
                     {/* Options for Multiple Choice */}
                     {question.type === "multiple_choice" && question.options && (
                       <div className="space-y-2">
-                        <Label className="text-sm text-muted-foreground">Answer Options</Label>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm text-muted-foreground">
+                            Answer Options ({question.options.length}/8)
+                          </Label>
+                          {question.options.length < 8 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleAddOption(index)}
+                              className="h-7 text-xs"
+                            >
+                              <Plus className="w-3 h-3 mr-1" />
+                              Add Option
+                            </Button>
+                          )}
+                        </div>
                         <div className="space-y-2">
                           {question.options.map((option, optIndex) => (
                             <div key={optIndex} className="flex items-center gap-2">
@@ -333,9 +402,22 @@ export default function AddQuestionsStep({
                               >
                                 {question.correctAnswer === option ? "✓" : "Set"}
                               </Button>
+                              {question.options.length > 2 && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleRemoveOption(index, optIndex)}
+                                  className="h-10 w-10 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              )}
                             </div>
                           ))}
                         </div>
+                        {question.options.length < 2 && (
+                          <p className="text-xs text-destructive">Minimum 2 options required</p>
+                        )}
                       </div>
                     )}
 
