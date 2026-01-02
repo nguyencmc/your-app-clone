@@ -8,11 +8,15 @@ import CreateExamCard from "@/components/dashboard/CreateExamCard";
 import CourseCard from "@/components/dashboard/CourseCard";
 import FeatureCards from "@/components/dashboard/FeatureCards";
 import { Menu } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "@/components/ui/button";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -51,14 +55,29 @@ const Dashboard = () => {
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
-        <DashboardSidebar userName={userName} />
+        <DashboardSidebar 
+          userName={userName} 
+          mobileOpen={mobileMenuOpen}
+          onMobileClose={() => setMobileMenuOpen(false)}
+        />
         
         <main className="flex-1 overflow-auto">
           {/* Header */}
           <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/50 px-4 lg:px-6 h-14 flex items-center gap-4">
-            <SidebarTrigger className="lg:hidden">
-              <Menu className="w-5 h-5" />
-            </SidebarTrigger>
+            {isMobile ? (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setMobileMenuOpen(true)}
+                className="rounded-full"
+              >
+                <Menu className="w-5 h-5" />
+              </Button>
+            ) : (
+              <SidebarTrigger className="lg:hidden">
+                <Menu className="w-5 h-5" />
+              </SidebarTrigger>
+            )}
             <div className="flex-1" />
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="hidden sm:inline">Welcome back,</span>
