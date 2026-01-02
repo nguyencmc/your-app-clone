@@ -49,11 +49,21 @@ import {
   FolderOpen,
   ClipboardList,
   LayoutGrid,
-  List
+  List,
+  MoreVertical
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Courses = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { courses, isLoading, createCourse, updateCourse, deleteCourse } = useCourses();
   
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -62,7 +72,7 @@ const Courses = () => {
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [deletingCourse, setDeletingCourse] = useState<Course | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchTerm, setSearchTerm] = useState("");
   const [studentCounts, setStudentCounts] = useState<Record<string, number>>({});
   
@@ -341,55 +351,97 @@ const Courses = () => {
                             
                             {/* Actions */}
                             <TableCell>
-                              <div className="flex items-center justify-end gap-2">
-                                {/* Edit & Delete Icons */}
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                  onClick={() => handleEdit(course)}
-                                >
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                  onClick={() => { setDeletingCourse(course); setIsDeleteOpen(true); }}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                                
-                                {/* View Exams Button */}
-                                <Button
-                                  size="sm"
-                                  className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 px-3"
-                                >
-                                  <ClipboardList className="w-4 h-4 mr-1.5" />
-                                  View Exams
-                                </Button>
-                                
-                                {/* Files Button */}
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="border-primary/50 text-primary hover:bg-primary/10 h-8 px-3"
-                                >
-                                  <FolderOpen className="w-4 h-4 mr-1.5" />
-                                  Files
-                                </Button>
-                                
-                                {/* Manage Students Button */}
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10 h-8 px-3"
-                                  onClick={() => navigate(`/dashboard/courses/${course.id}/students`)}
-                                >
-                                  <Users className="w-4 h-4 mr-1.5" />
-                                  Manage students
-                                </Button>
-                              </div>
+                              {isMobile ? (
+                                /* Mobile: Dropdown Menu */
+                                <div className="flex justify-end">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        <MoreVertical className="w-4 h-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-48">
+                                      <DropdownMenuItem 
+                                        className="gap-2"
+                                        onClick={() => navigate(`/dashboard/courses/${course.id}/students`)}
+                                      >
+                                        <Users className="w-4 h-4" />
+                                        Manage Students
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem className="gap-2">
+                                        <ClipboardList className="w-4 h-4" />
+                                        View Exams
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem className="gap-2">
+                                        <FolderOpen className="w-4 h-4" />
+                                        Files
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem 
+                                        className="gap-2"
+                                        onClick={() => handleEdit(course)}
+                                      >
+                                        <Pencil className="w-4 h-4" />
+                                        Edit
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem 
+                                        className="gap-2 text-destructive focus:text-destructive"
+                                        onClick={() => { setDeletingCourse(course); setIsDeleteOpen(true); }}
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              ) : (
+                                /* Desktop: Full Action Buttons */
+                                <div className="flex items-center justify-end gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                    onClick={() => handleEdit(course)}
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    onClick={() => { setDeletingCourse(course); setIsDeleteOpen(true); }}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                  
+                                  <Button
+                                    size="sm"
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 px-3"
+                                  >
+                                    <ClipboardList className="w-4 h-4 mr-1.5" />
+                                    View Exams
+                                  </Button>
+                                  
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-primary/50 text-primary hover:bg-primary/10 h-8 px-3"
+                                  >
+                                    <FolderOpen className="w-4 h-4 mr-1.5" />
+                                    Files
+                                  </Button>
+                                  
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10 h-8 px-3"
+                                    onClick={() => navigate(`/dashboard/courses/${course.id}/students`)}
+                                  >
+                                    <Users className="w-4 h-4 mr-1.5" />
+                                    Manage students
+                                  </Button>
+                                </div>
+                              )}
                             </TableCell>
                           </TableRow>
                         ))}
