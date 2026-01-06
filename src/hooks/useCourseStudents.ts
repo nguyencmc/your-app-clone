@@ -1,16 +1,9 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { CourseStudent } from "@/types";
+import { courseService } from "@/services";
 
-export interface CourseStudent {
-  id: string;
-  course_id: string;
-  student_name: string;
-  student_email: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
+export type { CourseStudent } from "@/types";
 
 export function useCourseStudents(courseId: string | undefined) {
   const [students, setStudents] = useState<CourseStudent[]>([]);
@@ -25,16 +18,10 @@ export function useCourseStudents(courseId: string | undefined) {
 
   const fetchStudents = async () => {
     if (!courseId) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from("course_students")
-        .select("*")
-        .eq("course_id", courseId)
-        .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setStudents(data || []);
+    try {
+      const data = await courseService.fetchCourseStudents(courseId);
+      setStudents(data);
     } catch (error) {
       console.error("Error fetching students:", error);
     } finally {
@@ -46,17 +33,11 @@ export function useCourseStudents(courseId: string | undefined) {
     if (!courseId) return;
 
     try {
-      const { data, error } = await supabase
-        .from("course_students")
-        .insert([{
-          course_id: courseId,
-          student_name: studentName,
-          student_email: studentEmail,
-        }])
-        .select()
-        .single();
-
-      if (error) throw error;
+      const data = await courseService.addStudent(
+        courseId,
+        studentName,
+        studentEmail
+      );
 
       toast({
         title: "Student Added",
@@ -76,25 +57,17 @@ export function useCourseStudents(courseId: string | undefined) {
     }
   };
 
-  const addStudentsBulk = async (students: { name: string; email: string }[]) => {
-    if (!courseId || students.length === 0) return;
+  const addStudentsBulk = async (
+    studentsData: { name: string; email: string }[]
+  ) => {
+    if (!courseId || studentsData.length === 0) return;
 
     try {
-      const { error } = await supabase
-        .from("course_students")
-        .insert(
-          students.map(s => ({
-            course_id: courseId,
-            student_name: s.name,
-            student_email: s.email,
-          }))
-        );
-
-      if (error) throw error;
+      await courseService.addStudentsBulk(courseId, studentsData);
 
       toast({
         title: "Students Added",
-        description: `${students.length} students have been added to the course.`,
+        description: `${studentsData.length} students have been added to the course.`,
       });
 
       await fetchStudents();
@@ -111,12 +84,7 @@ export function useCourseStudents(courseId: string | undefined) {
 
   const updateStudent = async (id: string, updates: Partial<CourseStudent>) => {
     try {
-      const { error } = await supabase
-        .from("course_students")
-        .update(updates)
-        .eq("id", id);
-
-      if (error) throw error;
+      await courseService.updateStudent(id, updates);
 
       toast({
         title: "Student Updated",
@@ -137,12 +105,7 @@ export function useCourseStudents(courseId: string | undefined) {
 
   const deleteStudent = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from("course_students")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
+      await courseService.deleteStudent(id);
 
       toast({
         title: "Student Removed",

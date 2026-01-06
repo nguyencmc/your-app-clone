@@ -1,57 +1,28 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { DocumentationCategory, DocumentationArticle } from "@/types";
+import { documentationService } from "@/services";
 
-export interface DocumentationCategory {
-  id: string;
-  name: string;
-  description: string | null;
-  icon: string;
-  color: string;
-  display_order: number;
-  created_at: string;
-}
-
-export interface DocumentationArticle {
-  id: string;
-  category_id: string | null;
-  title: string;
-  slug: string;
-  content: string;
-  summary: string | null;
-  display_order: number;
-  is_featured: boolean;
-  created_at: string;
-  updated_at: string;
-}
+export type { DocumentationCategory, DocumentationArticle } from "@/types";
 
 export const useDocumentation = () => {
   const [categories, setCategories] = useState<DocumentationCategory[]>([]);
   const [articles, setArticles] = useState<DocumentationArticle[]>([]);
-  const [featuredArticles, setFeaturedArticles] = useState<DocumentationArticle[]>([]);
+  const [featuredArticles, setFeaturedArticles] = useState<
+    DocumentationArticle[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      // Fetch categories
-      const { data: categoriesData, error: categoriesError } = await supabase
-        .from("documentation_categories")
-        .select("*")
-        .order("display_order", { ascending: true });
+      const [categoriesData, articlesData] = await Promise.all([
+        documentationService.fetchCategories(),
+        documentationService.fetchArticles(),
+      ]);
 
-      if (categoriesError) throw categoriesError;
-
-      // Fetch all articles
-      const { data: articlesData, error: articlesError } = await supabase
-        .from("documentation_articles")
-        .select("*")
-        .order("display_order", { ascending: true });
-
-      if (articlesError) throw articlesError;
-
-      setCategories(categoriesData || []);
-      setArticles(articlesData || []);
-      setFeaturedArticles((articlesData || []).filter((a) => a.is_featured));
+      setCategories(categoriesData);
+      setArticles(articlesData);
+      setFeaturedArticles(articlesData.filter((a) => a.is_featured));
     } catch (error) {
       console.error("Error fetching documentation:", error);
     } finally {
