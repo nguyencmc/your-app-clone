@@ -1,30 +1,9 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ForumCategory, ForumPost } from "@/types";
+import { forumService, authService } from "@/services";
 
-export interface ForumCategory {
-  id: string;
-  name: string;
-  description: string | null;
-  icon: string;
-  created_at: string;
-  post_count?: number;
-}
-
-export interface ForumPost {
-  id: string;
-  user_id: string;
-  category_id: string | null;
-  title: string;
-  content: string;
-  tags: string[];
-  likes_count: number;
-  replies_count: number;
-  created_at: string;
-  updated_at: string;
-  author_name?: string;
-  user_liked?: boolean;
-}
+export type { ForumCategory, ForumPost } from "@/types";
 
 export function useForum() {
   const [categories, setCategories] = useState<ForumCategory[]>([]);
@@ -39,24 +18,8 @@ export function useForum() {
 
   const fetchCategories = async () => {
     try {
-      const { data: categoriesData, error: catError } = await supabase
-        .from("forum_categories")
-        .select("*");
-
-      if (catError) throw catError;
-
-      // Get post counts for each category
-      const categoriesWithCounts = await Promise.all(
-        (categoriesData || []).map(async (cat) => {
-          const { count } = await supabase
-            .from("forum_posts")
-            .select("*", { count: "exact", head: true })
-            .eq("category_id", cat.id);
-          return { ...cat, post_count: count || 0 };
-        })
-      );
-
-      setCategories(categoriesWithCounts);
+      const data = await forumService.fetchCategories();
+      setCategories(data);
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
@@ -64,45 +27,9 @@ export function useForum() {
 
   const fetchPosts = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { data: postsData, error: postsError } = await supabase
-        .from("forum_posts")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(20);
-
-      if (postsError) throw postsError;
-
-      // Get author names from profiles
-      const postsWithAuthors = await Promise.all(
-        (postsData || []).map(async (post) => {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("full_name")
-            .eq("user_id", post.user_id)
-            .maybeSingle();
-
-          let userLiked = false;
-          if (user) {
-            const { data: like } = await supabase
-              .from("forum_post_likes")
-              .select("id")
-              .eq("post_id", post.id)
-              .eq("user_id", user.id)
-              .maybeSingle();
-            userLiked = !!like;
-          }
-
-          return {
-            ...post,
-            author_name: profile?.full_name || "Anonymous",
-            user_liked: userLiked,
-          };
-        })
-      );
-
-      setPosts(postsWithAuthors);
+      const user = await authService.getCurrentUser();
+      const data = await forumService.fetchPosts(user?.id);
+      setPosts(data);
     } catch (error) {
       console.error("Error fetching posts:", error);
     } finally {
@@ -110,24 +37,23 @@ export function useForum() {
     }
   };
 
-  const createPost = async (title: string, content: string, categoryId?: string, tags?: string[]) => {
+  const createPost = async (
+    title: string,
+    content: string,
+    categoryId?: string,
+    tags?: string[]
+  ) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await authService.getCurrentUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase
-        .from("forum_posts")
-        .insert([{
-          user_id: user.id,
-          title,
-          content,
-          category_id: categoryId,
-          tags: tags || [],
-        }])
-        .select()
-        .single();
-
-      if (error) throw error;
+      const data = await forumService.createPost(
+        user.id,
+        title,
+        content,
+        categoryId,
+        tags
+      );
 
       toast({
         title: "Post Created",
@@ -150,35 +76,18 @@ export function useForum() {
 
   const toggleLike = async (postId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = await authService.getCurrentUser();
       if (!user) throw new Error("Not authenticated");
 
-      const post = posts.find(p => p.id === postId);
+      const post = posts.find((p) => p.id === postId);
       if (!post) return;
 
-      if (post.user_liked) {
-        // Unlike
-        await supabase
-          .from("forum_post_likes")
-          .delete()
-          .eq("post_id", postId)
-          .eq("user_id", user.id);
-
-        await supabase
-          .from("forum_posts")
-          .update({ likes_count: Math.max(0, post.likes_count - 1) })
-          .eq("id", postId);
-      } else {
-        // Like
-        await supabase
-          .from("forum_post_likes")
-          .insert([{ post_id: postId, user_id: user.id }]);
-
-        await supabase
-          .from("forum_posts")
-          .update({ likes_count: post.likes_count + 1 })
-          .eq("id", postId);
-      }
+      await forumService.toggleLike(
+        postId,
+        user.id,
+        post.likes_count,
+        post.user_liked || false
+      );
 
       await fetchPosts();
     } catch (error) {
@@ -188,12 +97,7 @@ export function useForum() {
 
   const deletePost = async (postId: string) => {
     try {
-      const { error } = await supabase
-        .from("forum_posts")
-        .delete()
-        .eq("id", postId);
-
-      if (error) throw error;
+      await forumService.deletePost(postId);
 
       toast({
         title: "Post Deleted",
@@ -219,6 +123,9 @@ export function useForum() {
     createPost,
     toggleLike,
     deletePost,
-    refetch: () => { fetchCategories(); fetchPosts(); },
+    refetch: () => {
+      fetchCategories();
+      fetchPosts();
+    },
   };
 }
