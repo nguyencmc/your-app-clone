@@ -6,3 +6,4 @@ export * from "./documentation";
 export * from "./exam";
 export * from "./usage";
 export * from "./user";
+export * from "./note";

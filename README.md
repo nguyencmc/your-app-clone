@@ -1,8 +1,65 @@
-# Welcome to your Lovable project
+# ExamAI - AI-Powered Exam Platform
 
-## Project info
+## Getting Started
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+### Prerequisites
+
+- Node.js (v18 or higher)
+- npm or bun
+
+### Installation
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Copy `.env.example` to `.env` and fill in your Supabase credentials:
+   ```bash
+   cp .env.example .env
+   ```
+
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `VITE_SUPABASE_URL` | Your Supabase project URL |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Your Supabase anon/public key |
+| `VITE_SUPABASE_PROJECT_ID` | Your Supabase project ID |
+
+### Features
+
+- 🔐 Authentication (Login/Register)
+- 📝 Notes CRUD
+- 🎓 AI-Powered Exam Generation
+- 📊 Dashboard with Analytics
+- 👥 Course & Student Management
+
+## Tech Stack
+
+- React + TypeScript
+- Vite
+- Tailwind CSS
+- Supabase (Auth, Database, Storage)
+- React Router DOM
+
+## Project Structure
+
+```
+src/
+├── components/    # Reusable UI components
+├── hooks/         # Custom React hooks
+├── pages/         # Page components
+├── services/      # API/Supabase service layer
+├── types/         # TypeScript type definitions
+└── integrations/  # Third-party integrations
+```
 
 ## How can I edit this code?
 
@@ -10,7 +67,7 @@ There are several ways of editing your application.
 
 **Use Lovable**
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+Simply visit the Lovable Project and start prompting.
 
 Changes made via Lovable will be committed automatically to this repo.
 
@@ -36,33 +93,9 @@ npm i
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+Simply open Lovable and click on Share -> Publish.
 
 ## Can I connect a custom domain to my Lovable project?
 
