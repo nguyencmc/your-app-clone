@@ -7,9 +7,11 @@ import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import CreateExamCard from "@/components/dashboard/CreateExamCard";
 import CourseCard from "@/components/dashboard/CourseCard";
 import FeatureCards from "@/components/dashboard/FeatureCards";
-import { Menu } from "lucide-react";
+import NotesSection from "@/components/dashboard/NotesSection";
+import { Menu, LogOut } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -17,6 +19,7 @@ const Dashboard = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { signOut } = useAuth();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -79,9 +82,23 @@ const Dashboard = () => {
               </SidebarTrigger>
             )}
             <div className="flex-1" />
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="hidden sm:inline">Welcome back,</span>
-              <span className="font-medium text-foreground">{userName}</span>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <span className="hidden sm:inline">Welcome back,</span>
+                <span className="font-medium text-foreground">{user?.email}</span>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={async () => {
+                  await signOut();
+                  navigate("/login");
+                }}
+                className="gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
             </div>
           </header>
 
@@ -104,6 +121,9 @@ const Dashboard = () => {
               </div>
               <CourseCard />
             </div>
+
+            {/* Notes Section */}
+            <NotesSection />
 
             {/* Feature Grid */}
             <FeatureCards />
