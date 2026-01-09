@@ -22,6 +22,7 @@ import Courses from "./pages/dashboard/Courses";
 import CourseStudents from "./pages/dashboard/CourseStudents";
 import Admin from "./pages/dashboard/Admin";
 import ExamManagement from "./pages/dashboard/ExamManagement";
+import ExamHistory from "./pages/dashboard/ExamHistory";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -179,6 +180,14 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <ExamManagement />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/dashboard/history"
+      element={
+        <ProtectedRoute>
+          <ExamHistory />
         </ProtectedRoute>
       }
     />
