@@ -17,6 +17,7 @@ import {
   Shield,
   X,
   ChevronRight,
+  Brain,
 } from "lucide-react";
 import {
   Sidebar,
@@ -44,6 +45,7 @@ const menuItems = [
   { icon: Home, label: "Dashboard", path: "/dashboard", description: "Tổng quan" },
   { icon: BookOpen, label: "Courses", path: "/dashboard/courses", description: "Quản lý khóa học" },
   { icon: Play, label: "Playground", path: "/dashboard/playground", description: "Tạo đề thi" },
+  { icon: Brain, label: "Spaced Repetition", path: "/dashboard/spaced-repetition", description: "Ôn tập thông minh" },
   { icon: History, label: "Exam History", path: "/dashboard/history", description: "Lịch sử làm bài" },
   { icon: FileText, label: "Documentation", path: "/dashboard/docs", description: "Tài liệu hướng dẫn" },
   { icon: MessageSquare, label: "Forum", path: "/dashboard/forum", description: "Cộng đồng" },

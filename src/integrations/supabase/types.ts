@@ -472,6 +472,56 @@ export type Database = {
         }
         Relationships: []
       }
+      spaced_repetition: {
+        Row: {
+          created_at: string
+          ease_factor: number
+          exam_id: string
+          id: string
+          interval: number
+          last_reviewed_at: string | null
+          next_review_date: string
+          question_index: number
+          repetitions: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ease_factor?: number
+          exam_id: string
+          id?: string
+          interval?: number
+          last_reviewed_at?: string | null
+          next_review_date?: string
+          question_index: number
+          repetitions?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ease_factor?: number
+          exam_id?: string
+          id?: string
+          interval?: number
+          last_reviewed_at?: string | null
+          next_review_date?: string
+          question_index?: number
+          repetitions?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spaced_repetition_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subjects: {
         Row: {
           created_at: string
