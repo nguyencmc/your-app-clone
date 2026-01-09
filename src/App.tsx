@@ -23,6 +23,7 @@ import CourseStudents from "./pages/dashboard/CourseStudents";
 import Admin from "./pages/dashboard/Admin";
 import ExamManagement from "./pages/dashboard/ExamManagement";
 import ExamHistory from "./pages/dashboard/ExamHistory";
+import SpacedRepetition from "./pages/dashboard/SpacedRepetition";
 import NotFound from "./pages/NotFound";
 import { Loader2 } from "lucide-react";
 
@@ -188,6 +189,14 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <ExamHistory />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/dashboard/spaced-repetition"
+      element={
+        <ProtectedRoute>
+          <SpacedRepetition />
         </ProtectedRoute>
       }
     />
