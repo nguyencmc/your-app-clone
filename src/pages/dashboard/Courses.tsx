@@ -50,8 +50,10 @@ import {
   ClipboardList,
   LayoutGrid,
   List,
-  MoreVertical
+  MoreVertical,
+  Sparkles
 } from "lucide-react";
+import { AICourseAssistant } from "@/components/course/AICourseAssistant";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -376,6 +378,10 @@ const Courses = () => {
                                         <FolderOpen className="w-4 h-4" />
                                         Files
                                       </DropdownMenuItem>
+                                      <DropdownMenuItem className="gap-2 text-violet-400">
+                                        <Sparkles className="w-4 h-4" />
+                                        AI Assistant
+                                      </DropdownMenuItem>
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem 
                                         className="gap-2"
@@ -440,6 +446,11 @@ const Courses = () => {
                                     <Users className="w-4 h-4 mr-1.5" />
                                     Manage students
                                   </Button>
+
+                                  <AICourseAssistant 
+                                    course={course} 
+                                    studentCount={studentCounts[course.id] || 0}
+                                  />
                                 </div>
                               )}
                             </TableCell>
@@ -529,6 +540,10 @@ const Courses = () => {
                                 <Users className="w-3.5 h-3.5 mr-1.5" />
                                 Manage students
                               </Button>
+                              <AICourseAssistant 
+                                course={course} 
+                                studentCount={studentCounts[course.id] || 0}
+                              />
                             </div>
                           </CardContent>
                         </Card>
