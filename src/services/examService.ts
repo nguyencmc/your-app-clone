@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
-import { ExamAttempt } from "@/types";
+import { ExamAttempt, AIExplanation } from "@/types";
 import { Json } from "@/integrations/supabase/types";
+import { v4 as uuidv4 } from "uuid";
 
 export const examService = {
   async fetchAttempts(userId: string): Promise<ExamAttempt[]> {
@@ -56,5 +57,53 @@ export const examService = {
 
     if (error) throw error;
     return data;
+  },
+
+  async saveAIExplanation(
+    examId: string,
+    questionId: string,
+    explanation: string
+  ): Promise<void> {
+    // Fetch current explanations
+    const { data: exam, error: fetchError } = await supabase
+      .from("exams")
+      .select("ai_explanations")
+      .eq("id", examId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const currentExplanations = (exam.ai_explanations as unknown as Record<string, AIExplanation>) || {};
+
+    const newExplanation: AIExplanation = {
+      id: uuidv4(),
+      question_id: questionId,
+      explanation,
+      created_at: new Date().toISOString(),
+    };
+
+    const updatedExplanations = {
+      ...currentExplanations,
+      [questionId]: newExplanation,
+    };
+
+    const { error: updateError } = await supabase
+      .from("exams")
+      .update({ ai_explanations: updatedExplanations as unknown as Json })
+      .eq("id", examId);
+
+    if (updateError) throw updateError;
+  },
+
+  async getAIExplanations(examId: string): Promise<Record<string, AIExplanation>> {
+    const { data, error } = await supabase
+      .from("exams")
+      .select("ai_explanations")
+      .eq("id", examId)
+      .single();
+
+    if (error) throw error;
+    
+    return (data.ai_explanations as unknown as Record<string, AIExplanation>) || {};
   },
 };

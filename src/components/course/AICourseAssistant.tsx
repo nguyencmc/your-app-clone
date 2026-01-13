@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCourseAssistant } from "@/hooks/useCourseAssistant";
+import { courseService } from "@/services";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Sparkles, 
   BookOpen, 
@@ -31,19 +33,24 @@ import {
   Loader2,
   Copy,
   Check,
-  X
+  X,
+  Save,
+  History
 } from "lucide-react";
-import { Course } from "@/hooks/useCourses";
+import { Course, AISuggestion } from "@/types";
 
 interface AICourseAssistantProps {
   course: Course;
   studentCount?: number;
+  onSuggestionSaved?: () => void;
 }
 
-export const AICourseAssistant = ({ course, studentCount = 0 }: AICourseAssistantProps) => {
+export const AICourseAssistant = ({ course, studentCount = 0, onSuggestionSaved }: AICourseAssistantProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("syllabus");
+  const [showHistory, setShowHistory] = useState(false);
   
   // Syllabus options
   const [duration, setDuration] = useState("12 tuần");
@@ -52,6 +59,7 @@ export const AICourseAssistant = ({ course, studentCount = 0 }: AICourseAssistan
   // Question input
   const [question, setQuestion] = useState("");
   
+  const { toast } = useToast();
   const { 
     isLoading, 
     response, 
@@ -96,10 +104,75 @@ export const AICourseAssistant = ({ course, studentCount = 0 }: AICourseAssistan
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleSaveSuggestion = async () => {
+    if (!response.trim()) return;
+    
+    setIsSaving(true);
+    try {
+      const suggestionType = activeTab as AISuggestion['type'];
+      await courseService.saveAISuggestion(course.id, {
+        type: suggestionType,
+        content: response,
+        metadata: {
+          duration: activeTab === 'syllabus' ? duration : undefined,
+          level: activeTab === 'syllabus' ? level : undefined,
+          question: activeTab === 'question' ? question : undefined,
+        },
+      });
+      
+      toast({
+        title: "Đã lưu",
+        description: "Gợi ý AI đã được lưu vào khóa học.",
+      });
+      
+      onSuggestionSaved?.();
+    } catch (error) {
+      console.error("Error saving suggestion:", error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể lưu gợi ý. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteSavedSuggestion = async (suggestionId: string) => {
+    try {
+      await courseService.deleteAISuggestion(course.id, suggestionId);
+      toast({
+        title: "Đã xóa",
+        description: "Gợi ý đã được xóa.",
+      });
+      onSuggestionSaved?.();
+    } catch (error) {
+      console.error("Error deleting suggestion:", error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể xóa gợi ý.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const levelLabels: Record<string, string> = {
     beginner: "Cơ bản",
     intermediate: "Trung cấp",
     advanced: "Nâng cao",
+  };
+
+  const savedSuggestions = course.ai_suggestions || [];
+  const filteredSuggestions = savedSuggestions.filter(s => {
+    if (activeTab === 'ask') return s.type === 'question';
+    return s.type === activeTab;
+  });
+
+  const typeLabels: Record<string, string> = {
+    syllabus: 'Syllabus',
+    content: 'Nội dung',
+    students: 'Học sinh',
+    question: 'Hỏi đáp',
   };
 
   return (
@@ -129,6 +202,15 @@ export const AICourseAssistant = ({ course, studentCount = 0 }: AICourseAssistan
                 </p>
               </div>
             </SheetTitle>
+            <Button
+              variant={showHistory ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setShowHistory(!showHistory)}
+              className="h-8 px-2"
+            >
+              <History className="w-4 h-4 mr-1" />
+              Đã lưu ({savedSuggestions.length})
+            </Button>
           </div>
         </SheetHeader>
 
@@ -292,8 +374,21 @@ export const AICourseAssistant = ({ course, studentCount = 0 }: AICourseAssistan
                   {isLoading && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
                   Kết quả
                 </CardTitle>
-                {response && (
+                {response && !isLoading && (
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSaveSuggestion}
+                      disabled={isSaving}
+                      className="h-8 px-2 text-green-500 hover:text-green-600"
+                    >
+                      {isSaving ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Save className="w-4 h-4" />
+                      )}
+                    </Button>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -327,6 +422,79 @@ export const AICourseAssistant = ({ course, studentCount = 0 }: AICourseAssistan
                 </ScrollArea>
               </CardContent>
             </Card>
+          )}
+
+          {/* Saved Suggestions History */}
+          {showHistory && filteredSuggestions.length > 0 && (
+            <Card className="flex-1 flex flex-col overflow-hidden border-border/50 mt-4">
+              <CardHeader className="py-3 px-4 border-b border-border/50">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <History className="w-4 h-4" />
+                  Gợi ý đã lưu - {typeLabels[activeTab === 'ask' ? 'question' : activeTab]}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 overflow-hidden p-0">
+                <ScrollArea className="h-full max-h-[300px]">
+                  <div className="p-4 space-y-4">
+                    {filteredSuggestions.map((suggestion) => (
+                      <div key={suggestion.id} className="border border-border/50 rounded-lg p-4 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-xs">
+                              {typeLabels[suggestion.type]}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(suggestion.created_at).toLocaleDateString('vi-VN')}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                await navigator.clipboard.writeText(suggestion.content);
+                                toast({
+                                  title: "Đã sao chép",
+                                  description: "Nội dung đã được sao chép vào clipboard.",
+                                });
+                              }}
+                              className="h-7 px-2"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteSavedSuggestion(suggestion.id)}
+                              className="h-7 px-2 text-destructive hover:text-destructive"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                        {suggestion.metadata?.question && (
+                          <p className="text-xs text-muted-foreground italic">
+                            Câu hỏi: {suggestion.metadata.question}
+                          </p>
+                        )}
+                        <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground/80 max-h-32 overflow-hidden">
+                          {suggestion.content.length > 500 
+                            ? suggestion.content.slice(0, 500) + '...' 
+                            : suggestion.content}
+                        </pre>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          )}
+
+          {showHistory && filteredSuggestions.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Chưa có gợi ý nào được lưu cho {typeLabels[activeTab === 'ask' ? 'question' : activeTab]}</p>
+            </div>
           )}
         </Tabs>
       </SheetContent>
