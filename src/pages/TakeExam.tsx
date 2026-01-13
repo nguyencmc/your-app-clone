@@ -9,7 +9,8 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useExamAttempts } from "@/hooks/useExamAttempts";
-import { Clock, CheckCircle, XCircle, ArrowLeft, ArrowRight, Send, Trophy, RotateCcw } from "lucide-react";
+import { examService } from "@/services";
+import { Clock, CheckCircle, XCircle, ArrowLeft, ArrowRight, Send, Trophy, RotateCcw, Save, Loader2 } from "lucide-react";
 
 interface Question {
   id: string;
@@ -44,6 +45,8 @@ const TakeExam = () => {
   const [examState, setExamState] = useState<ExamState>("taking");
   const [score, setScore] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [savingExplanations, setSavingExplanations] = useState<Record<string, boolean>>({});
+  const [savedExplanations, setSavedExplanations] = useState<Record<string, boolean>>({});
   const startTimeRef = useRef<number>(Date.now());
 
   useEffect(() => {
@@ -271,8 +274,53 @@ const TakeExam = () => {
                     
                     {question.explanation && (
                       <div className="mt-4 p-4 bg-primary/10 rounded-lg border border-primary/20">
-                        <p className="text-sm font-medium text-primary mb-1">Explanation:</p>
-                        <p className="text-sm text-muted-foreground">{question.explanation}</p>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-primary mb-1">Explanation:</p>
+                            <p className="text-sm text-muted-foreground">{question.explanation}</p>
+                          </div>
+                          {!savedExplanations[question.id] && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                if (!id) return;
+                                setSavingExplanations(prev => ({ ...prev, [question.id]: true }));
+                                try {
+                                  await examService.saveAIExplanation(id, question.id, question.explanation);
+                                  setSavedExplanations(prev => ({ ...prev, [question.id]: true }));
+                                  toast({
+                                    title: "Đã lưu",
+                                    description: "Giải thích đã được lưu vào đề thi.",
+                                  });
+                                } catch (error) {
+                                  console.error("Error saving explanation:", error);
+                                  toast({
+                                    title: "Lỗi",
+                                    description: "Không thể lưu giải thích.",
+                                    variant: "destructive",
+                                  });
+                                } finally {
+                                  setSavingExplanations(prev => ({ ...prev, [question.id]: false }));
+                                }
+                              }}
+                              disabled={savingExplanations[question.id]}
+                              className="h-8 px-2 text-primary hover:text-primary"
+                            >
+                              {savingExplanations[question.id] ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Save className="w-4 h-4" />
+                              )}
+                            </Button>
+                          )}
+                          {savedExplanations[question.id] && (
+                            <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Đã lưu
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     )}
                   </CardContent>

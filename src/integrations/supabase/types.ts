@@ -54,6 +54,7 @@ export type Database = {
       }
       courses: {
         Row: {
+          ai_suggestions: Json | null
           created_at: string
           description: string | null
           id: string
@@ -64,6 +65,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_suggestions?: Json | null
           created_at?: string
           description?: string | null
           id?: string
@@ -74,6 +76,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_suggestions?: Json | null
           created_at?: string
           description?: string | null
           id?: string
@@ -208,6 +211,7 @@ export type Database = {
       }
       exams: {
         Row: {
+          ai_explanations: Json | null
           ai_protection: boolean | null
           course_id: string | null
           created_at: string
@@ -226,6 +230,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_explanations?: Json | null
           ai_protection?: boolean | null
           course_id?: string | null
           created_at?: string
@@ -244,6 +249,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_explanations?: Json | null
           ai_protection?: boolean | null
           course_id?: string | null
           created_at?: string

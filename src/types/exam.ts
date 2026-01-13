@@ -10,6 +10,13 @@ export interface Question {
   points?: number;
 }
 
+export interface AIExplanation {
+  id: string;
+  question_id: string;
+  explanation: string;
+  created_at: string;
+}
+
 export interface Exam {
   id: string;
   user_id: string;
@@ -25,6 +32,7 @@ export interface Exam {
   end_date: string | null;
   ai_protection: boolean | null;
   randomize_order: boolean | null;
+  ai_explanations?: Record<string, AIExplanation>;
   created_at: string;
   updated_at: string;
 }

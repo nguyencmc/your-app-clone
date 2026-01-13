@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
-import { Course, CourseStudent } from "@/types";
+import { Course, CourseStudent, AISuggestion } from "@/types";
 import { v4 as uuidv4 } from "uuid";
+import { Json } from "@/integrations/supabase/types";
 
 export const courseService = {
   async fetchCourses(userId: string): Promise<Course[]> {
@@ -11,7 +12,13 @@ export const courseService = {
       .order("created_at", { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    
+    return (data || []).map(course => ({
+      ...course,
+      ai_suggestions: Array.isArray(course.ai_suggestions) 
+        ? (course.ai_suggestions as unknown as AISuggestion[]) 
+        : [],
+    }));
   },
 
   async uploadCourseImage(userId: string, file: File): Promise<string> {
@@ -53,27 +60,94 @@ export const courseService = {
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      ai_suggestions: [],
+    };
   },
 
   async updateCourse(
     id: string,
     updates: Partial<Course>
   ): Promise<Course> {
+    // Remove ai_suggestions from updates if present to avoid type issues
+    const { ai_suggestions, ...safeUpdates } = updates;
+    
     const { data, error } = await supabase
       .from("courses")
-      .update(updates)
+      .update(safeUpdates)
       .eq("id", id)
       .select()
       .single();
 
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      ai_suggestions: Array.isArray(data.ai_suggestions) 
+        ? (data.ai_suggestions as unknown as AISuggestion[]) 
+        : [],
+    };
   },
 
   async deleteCourse(id: string): Promise<void> {
     const { error } = await supabase.from("courses").delete().eq("id", id);
     if (error) throw error;
+  },
+
+  async saveAISuggestion(
+    courseId: string,
+    suggestion: Omit<AISuggestion, 'id' | 'created_at'>
+  ): Promise<void> {
+    // Fetch current suggestions
+    const { data: course, error: fetchError } = await supabase
+      .from("courses")
+      .select("ai_suggestions")
+      .eq("id", courseId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const currentSuggestions = Array.isArray(course.ai_suggestions) 
+      ? (course.ai_suggestions as unknown as AISuggestion[]) 
+      : [];
+
+    const newSuggestion: AISuggestion = {
+      ...suggestion,
+      id: uuidv4(),
+      created_at: new Date().toISOString(),
+    };
+
+    const updatedSuggestions = [...currentSuggestions, newSuggestion];
+
+    const { error: updateError } = await supabase
+      .from("courses")
+      .update({ ai_suggestions: updatedSuggestions as unknown as Json })
+      .eq("id", courseId);
+
+    if (updateError) throw updateError;
+  },
+
+  async deleteAISuggestion(courseId: string, suggestionId: string): Promise<void> {
+    const { data: course, error: fetchError } = await supabase
+      .from("courses")
+      .select("ai_suggestions")
+      .eq("id", courseId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    const currentSuggestions = Array.isArray(course.ai_suggestions) 
+      ? (course.ai_suggestions as unknown as AISuggestion[]) 
+      : [];
+
+    const updatedSuggestions = currentSuggestions.filter(s => s.id !== suggestionId);
+
+    const { error: updateError } = await supabase
+      .from("courses")
+      .update({ ai_suggestions: updatedSuggestions as unknown as Json })
+      .eq("id", courseId);
+
+    if (updateError) throw updateError;
   },
 
   // Course Students

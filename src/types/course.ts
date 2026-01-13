@@ -1,3 +1,15 @@
+export interface AISuggestion {
+  id: string;
+  type: 'syllabus' | 'content' | 'students' | 'question';
+  content: string;
+  created_at: string;
+  metadata?: {
+    duration?: string;
+    level?: string;
+    question?: string;
+  };
+}
+
 export interface Course {
   id: string;
   user_id: string;
@@ -5,6 +17,7 @@ export interface Course {
   description: string | null;
   subject: string | null;
   image_url: string | null;
+  ai_suggestions?: AISuggestion[];
   created_at: string;
   updated_at: string;
 }

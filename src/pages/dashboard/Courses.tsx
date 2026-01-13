@@ -66,7 +66,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const Courses = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { courses, isLoading, createCourse, updateCourse, deleteCourse } = useCourses();
+  const { courses, isLoading, createCourse, updateCourse, deleteCourse, refetch } = useCourses();
   
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -450,6 +450,7 @@ const Courses = () => {
                                   <AICourseAssistant 
                                     course={course} 
                                     studentCount={studentCounts[course.id] || 0}
+                                    onSuggestionSaved={refetch}
                                   />
                                 </div>
                               )}
@@ -543,6 +544,7 @@ const Courses = () => {
                               <AICourseAssistant 
                                 course={course} 
                                 studentCount={studentCounts[course.id] || 0}
+                                onSuggestionSaved={refetch}
                               />
                             </div>
                           </CardContent>
