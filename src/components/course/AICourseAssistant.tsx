@@ -35,8 +35,12 @@ import {
   Check,
   X,
   Save,
-  History
+  History,
+  Download,
+  FileText,
+  FileDown
 } from "lucide-react";
+import { exportSuggestions } from "@/lib/documentExport";
 import { Course, AISuggestion } from "@/types";
 
 interface AICourseAssistantProps {
@@ -51,6 +55,7 @@ export const AICourseAssistant = ({ course, studentCount = 0, onSuggestionSaved 
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("syllabus");
   const [showHistory, setShowHistory] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   
   // Syllabus options
   const [duration, setDuration] = useState("12 tuần");
@@ -175,6 +180,43 @@ export const AICourseAssistant = ({ course, studentCount = 0, onSuggestionSaved 
     question: 'Hỏi đáp',
   };
 
+  const handleExport = async (format: 'pdf' | 'word') => {
+    if (savedSuggestions.length === 0) {
+      toast({
+        title: "Không có gợi ý",
+        description: "Chưa có gợi ý nào được lưu để xuất.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      await exportSuggestions({
+        title: `Gợi ý AI - ${course.title}`,
+        courseTitle: course.title,
+        suggestions: savedSuggestions,
+        format,
+      });
+      
+      toast({
+        title: "Xuất thành công",
+        description: format === 'pdf' 
+          ? "Cửa sổ in PDF đã được mở." 
+          : "File Word đã được tải xuống.",
+      });
+    } catch (error) {
+      console.error("Error exporting:", error);
+      toast({
+        title: "Lỗi xuất file",
+        description: error instanceof Error ? error.message : "Không thể xuất file. Vui lòng thử lại.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
@@ -202,15 +244,45 @@ export const AICourseAssistant = ({ course, studentCount = 0, onSuggestionSaved 
                 </p>
               </div>
             </SheetTitle>
-            <Button
-              variant={showHistory ? "secondary" : "ghost"}
-              size="sm"
-              onClick={() => setShowHistory(!showHistory)}
-              className="h-8 px-2"
-            >
-              <History className="w-4 h-4 mr-1" />
-              Đã lưu ({savedSuggestions.length})
-            </Button>
+            <div className="flex items-center gap-1">
+              {savedSuggestions.length > 0 && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleExport('pdf')}
+                    disabled={isExporting}
+                    className="h-8 px-2"
+                    title="Xuất PDF"
+                  >
+                    <FileText className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleExport('word')}
+                    disabled={isExporting}
+                    className="h-8 px-2"
+                    title="Xuất Word"
+                  >
+                    {isExporting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <FileDown className="w-4 h-4" />
+                    )}
+                  </Button>
+                </>
+              )}
+              <Button
+                variant={showHistory ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setShowHistory(!showHistory)}
+                className="h-8 px-2"
+              >
+                <History className="w-4 h-4 mr-1" />
+                Đã lưu ({savedSuggestions.length})
+              </Button>
+            </div>
           </div>
         </SheetHeader>
 
