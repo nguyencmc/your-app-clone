@@ -18,7 +18,8 @@ import {
   Pencil,
   Eye,
   GripVertical,
-  Play
+  Play,
+  Sparkles
 } from "lucide-react";
 import {
   AlertDialog,
@@ -42,6 +43,13 @@ interface Question {
   explanation: string;
 }
 
+interface AIExplanation {
+  id: string;
+  question_id: string;
+  explanation: string;
+  created_at: string;
+}
+
 interface Exam {
   id: string;
   title: string;
@@ -53,6 +61,7 @@ interface Exam {
   question_count: number;
   created_at: string;
   updated_at: string;
+  ai_explanations?: Record<string, AIExplanation>;
 }
 
 export default function ExamDetail() {
@@ -101,9 +110,10 @@ export default function ExamDetail() {
         return;
       }
 
-      const examData = {
+      const examData: Exam = {
         ...data,
-        questions: Array.isArray(data.questions) ? (data.questions as unknown as Question[]) : []
+        questions: Array.isArray(data.questions) ? (data.questions as unknown as Question[]) : [],
+        ai_explanations: data.ai_explanations as unknown as Record<string, AIExplanation> | undefined
       };
       
       setExam(examData);
@@ -429,6 +439,22 @@ export default function ExamDetail() {
                             <p className="text-sm text-muted-foreground italic">
                               💡 {question.explanation}
                             </p>
+                          )}
+                          
+                          {/* AI Explanation saved from exam results */}
+                          {exam?.ai_explanations?.[String(question.id)] && (
+                            <div className="mt-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Sparkles className="h-4 w-4 text-primary" />
+                                <span className="text-sm font-medium text-primary">Giải thích AI đã lưu</span>
+                                <span className="text-xs text-muted-foreground">
+                                  ({new Date(exam.ai_explanations[String(question.id)].created_at).toLocaleDateString('vi-VN')})
+                                </span>
+                              </div>
+                              <p className="text-sm text-foreground whitespace-pre-wrap">
+                                {exam.ai_explanations[String(question.id)].explanation}
+                              </p>
+                            </div>
                           )}
                         </>
                       )}
