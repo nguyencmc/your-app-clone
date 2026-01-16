@@ -10,7 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useExamAttempts } from "@/hooks/useExamAttempts";
 import { examService } from "@/services";
-import { Clock, CheckCircle, XCircle, ArrowLeft, ArrowRight, Send, Trophy, RotateCcw, Save, Loader2 } from "lucide-react";
+import { exportExamResultsToPDF } from "@/lib/documentExport";
+import { Clock, CheckCircle, XCircle, ArrowLeft, ArrowRight, Send, Trophy, RotateCcw, Save, Loader2, FileText } from "lucide-react";
 
 interface Question {
   id: string;
@@ -45,9 +46,11 @@ const TakeExam = () => {
   const [examState, setExamState] = useState<ExamState>("taking");
   const [score, setScore] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [savingExplanations, setSavingExplanations] = useState<Record<string, boolean>>({});
   const [savedExplanations, setSavedExplanations] = useState<Record<string, boolean>>({});
   const startTimeRef = useRef<number>(Date.now());
+  const timeSpentRef = useRef<number>(0);
 
   useEffect(() => {
     const fetchExam = async () => {
@@ -102,6 +105,7 @@ const TakeExam = () => {
 
     // Calculate time spent in seconds
     const timeSpent = Math.floor((Date.now() - startTimeRef.current) / 1000);
+    timeSpentRef.current = timeSpent;
 
     // Prepare answers array for saving
     const answersArray = exam.questions.map((q) => ({
@@ -206,7 +210,7 @@ const TakeExam = () => {
                   </div>
                 </div>
 
-                <div className="flex justify-center gap-4">
+                <div className="flex justify-center gap-4 flex-wrap">
                   <Button variant="outline" onClick={() => navigate("/dashboard")}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back to Dashboard
@@ -216,9 +220,55 @@ const TakeExam = () => {
                     setCurrentQuestion(0);
                     setTimeRemaining(exam.time_limit * 60);
                     setExamState("taking");
+                    startTimeRef.current = Date.now();
                   }}>
                     <RotateCcw className="h-4 w-4 mr-2" />
                     Retake Exam
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={async () => {
+                      setIsExporting(true);
+                      try {
+                        await exportExamResultsToPDF({
+                          examTitle: exam.title,
+                          subject: exam.subject,
+                          difficulty: exam.difficulty,
+                          score,
+                          totalQuestions: exam.questions.length,
+                          timeSpent: timeSpentRef.current,
+                          questions: exam.questions.map(q => ({
+                            id: q.id,
+                            question: q.question,
+                            options: q.options,
+                            correct_answer: q.correct_answer,
+                            user_answer: answers[q.id] || '',
+                            explanation: q.explanation,
+                          })),
+                        });
+                        toast({
+                          title: "Xuất PDF thành công",
+                          description: "Cửa sổ in đã mở. Bạn có thể lưu thành PDF.",
+                        });
+                      } catch (error) {
+                        console.error("Export error:", error);
+                        toast({
+                          title: "Lỗi xuất PDF",
+                          description: error instanceof Error ? error.message : "Không thể xuất PDF.",
+                          variant: "destructive",
+                        });
+                      } finally {
+                        setIsExporting(false);
+                      }
+                    }}
+                    disabled={isExporting}
+                  >
+                    {isExporting ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <FileText className="h-4 w-4 mr-2" />
+                    )}
+                    Export PDF
                   </Button>
                 </div>
               </div>
