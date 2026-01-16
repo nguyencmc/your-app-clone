@@ -7,6 +7,23 @@ export interface ExportOptions {
   format: 'pdf' | 'word';
 }
 
+export interface ExamResultExportOptions {
+  examTitle: string;
+  subject: string;
+  difficulty: string;
+  score: number;
+  totalQuestions: number;
+  timeSpent: number;
+  questions: {
+    id: string;
+    question: string;
+    options: string[];
+    correct_answer: string;
+    user_answer: string;
+    explanation?: string;
+  }[];
+}
+
 const typeLabels: Record<string, string> = {
   syllabus: 'Syllabus',
   content: 'Nội dung đề xuất',
@@ -331,4 +348,249 @@ export const exportSuggestions = async (options: ExportOptions): Promise<void> =
   } else {
     await exportToWord(options);
   }
+};
+
+export const exportExamResultsToPDF = async (options: ExamResultExportOptions): Promise<void> => {
+  const { examTitle, subject, difficulty, score, totalQuestions, timeSpent, questions } = options;
+  
+  const percentage = Math.round((score / totalQuestions) * 100);
+  const minutes = Math.floor(timeSpent / 60);
+  const seconds = timeSpent % 60;
+  
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    throw new Error('Không thể mở cửa sổ mới. Vui lòng cho phép popup.');
+  }
+  
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html lang="vi">
+    <head>
+      <meta charset="UTF-8">
+      <title>Kết quả thi - ${escapeHtml(examTitle)}</title>
+      <style>
+        * {
+          box-sizing: border-box;
+        }
+        body {
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          line-height: 1.6;
+          color: #333;
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 40px 20px;
+          background: #fff;
+        }
+        .header {
+          text-align: center;
+          border-bottom: 3px solid #7c3aed;
+          padding-bottom: 20px;
+          margin-bottom: 30px;
+        }
+        .header h1 {
+          color: #7c3aed;
+          margin: 0 0 10px 0;
+          font-size: 28px;
+        }
+        .header .meta {
+          color: #666;
+          font-size: 14px;
+        }
+        .score-card {
+          background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+          color: white;
+          border-radius: 16px;
+          padding: 30px;
+          text-align: center;
+          margin-bottom: 30px;
+        }
+        .score-card .score {
+          font-size: 64px;
+          font-weight: bold;
+          margin: 10px 0;
+        }
+        .score-card .details {
+          display: flex;
+          justify-content: center;
+          gap: 40px;
+          margin-top: 20px;
+          font-size: 14px;
+          opacity: 0.9;
+        }
+        .question-card {
+          margin-bottom: 20px;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          overflow: hidden;
+          page-break-inside: avoid;
+        }
+        .question-card.correct {
+          border-left: 4px solid #22c55e;
+        }
+        .question-card.incorrect {
+          border-left: 4px solid #ef4444;
+        }
+        .question-header {
+          background: #f9fafb;
+          padding: 15px 20px;
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          border-bottom: 1px solid #e5e7eb;
+        }
+        .question-header h3 {
+          margin: 0;
+          font-size: 16px;
+          flex: 1;
+        }
+        .question-header .status {
+          font-size: 13px;
+          padding: 4px 12px;
+          border-radius: 20px;
+          font-weight: 500;
+        }
+        .question-header .status.correct {
+          background: #dcfce7;
+          color: #16a34a;
+        }
+        .question-header .status.incorrect {
+          background: #fee2e2;
+          color: #dc2626;
+        }
+        .question-content {
+          padding: 20px;
+        }
+        .option {
+          padding: 10px 15px;
+          margin-bottom: 8px;
+          border-radius: 8px;
+          border: 1px solid #e5e7eb;
+          font-size: 14px;
+        }
+        .option.correct-answer {
+          background: #dcfce7;
+          border-color: #22c55e;
+        }
+        .option.user-wrong {
+          background: #fee2e2;
+          border-color: #ef4444;
+        }
+        .option .badge {
+          display: inline-block;
+          font-size: 11px;
+          padding: 2px 8px;
+          border-radius: 10px;
+          margin-left: 10px;
+        }
+        .option .badge.correct {
+          background: #22c55e;
+          color: white;
+        }
+        .option .badge.your-answer {
+          background: #e5e7eb;
+          color: #666;
+        }
+        .explanation {
+          margin-top: 15px;
+          padding: 15px;
+          background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+          border-radius: 8px;
+          border: 1px solid rgba(124, 58, 237, 0.2);
+        }
+        .explanation h4 {
+          margin: 0 0 8px 0;
+          color: #7c3aed;
+          font-size: 14px;
+        }
+        .explanation p {
+          margin: 0;
+          font-size: 13px;
+          color: #555;
+          white-space: pre-wrap;
+        }
+        @media print {
+          body {
+            padding: 20px;
+          }
+          .score-card {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>📝 ${escapeHtml(examTitle)}</h1>
+        <div class="meta">
+          <strong>Môn học:</strong> ${escapeHtml(subject)} | 
+          <strong>Độ khó:</strong> ${escapeHtml(difficulty)} | 
+          <strong>Ngày:</strong> ${new Date().toLocaleDateString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </div>
+      </div>
+      
+      <div class="score-card">
+        <div>🏆 Kết quả của bạn</div>
+        <div class="score">${percentage}%</div>
+        <div>${score}/${totalQuestions} câu đúng</div>
+        <div class="details">
+          <span>⏱️ Thời gian: ${minutes}:${seconds.toString().padStart(2, '0')}</span>
+        </div>
+      </div>
+      
+      <h2 style="margin-bottom: 20px; color: #333;">Chi tiết từng câu hỏi</h2>
+      
+      ${questions.map((q, index) => {
+        const isCorrect = q.user_answer === q.correct_answer;
+        return `
+          <div class="question-card ${isCorrect ? 'correct' : 'incorrect'}">
+            <div class="question-header">
+              <h3>Q${index + 1}. ${escapeHtml(q.question)}</h3>
+              <span class="status ${isCorrect ? 'correct' : 'incorrect'}">
+                ${isCorrect ? '✓ Đúng' : '✗ Sai'}
+              </span>
+            </div>
+            <div class="question-content">
+              ${q.options.map(option => {
+                const isUserAnswer = q.user_answer === option;
+                const isCorrectAnswer = q.correct_answer === option;
+                let className = 'option';
+                if (isCorrectAnswer) className += ' correct-answer';
+                else if (isUserAnswer && !isCorrectAnswer) className += ' user-wrong';
+                
+                return `
+                  <div class="${className}">
+                    ${escapeHtml(option)}
+                    ${isCorrectAnswer ? '<span class="badge correct">Đáp án đúng</span>' : ''}
+                    ${isUserAnswer && !isCorrectAnswer ? '<span class="badge your-answer">Bạn chọn</span>' : ''}
+                  </div>
+                `;
+              }).join('')}
+              
+              ${q.explanation ? `
+                <div class="explanation">
+                  <h4>💡 Giải thích AI</h4>
+                  <p>${escapeHtml(q.explanation)}</p>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </body>
+    </html>
+  `;
+  
+  printWindow.document.write(htmlContent);
+  printWindow.document.close();
+  
+  printWindow.onload = () => {
+    printWindow.print();
+  };
 };
