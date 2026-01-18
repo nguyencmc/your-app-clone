@@ -478,6 +478,57 @@ export type Database = {
         }
         Relationships: []
       }
+      question_bank: {
+        Row: {
+          correct_answer: string
+          created_at: string
+          difficulty: string | null
+          explanation: string | null
+          id: string
+          options: Json | null
+          points: number | null
+          question: string
+          subject: string | null
+          tags: string[] | null
+          type: string
+          updated_at: string
+          usage_count: number | null
+          user_id: string
+        }
+        Insert: {
+          correct_answer: string
+          created_at?: string
+          difficulty?: string | null
+          explanation?: string | null
+          id?: string
+          options?: Json | null
+          points?: number | null
+          question: string
+          subject?: string | null
+          tags?: string[] | null
+          type?: string
+          updated_at?: string
+          usage_count?: number | null
+          user_id: string
+        }
+        Update: {
+          correct_answer?: string
+          created_at?: string
+          difficulty?: string | null
+          explanation?: string | null
+          id?: string
+          options?: Json | null
+          points?: number | null
+          question?: string
+          subject?: string | null
+          tags?: string[] | null
+          type?: string
+          updated_at?: string
+          usage_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       spaced_repetition: {
         Row: {
           created_at: string
