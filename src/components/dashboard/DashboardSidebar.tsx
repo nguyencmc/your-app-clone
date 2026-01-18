@@ -18,6 +18,7 @@ import {
   X,
   ChevronRight,
   Brain,
+  Library,
 } from "lucide-react";
 import {
   Sidebar,
@@ -45,6 +46,7 @@ const menuItems = [
   { icon: Home, label: "Dashboard", path: "/dashboard", description: "Tổng quan" },
   { icon: BookOpen, label: "Courses", path: "/dashboard/courses", description: "Quản lý khóa học" },
   { icon: Play, label: "Playground", path: "/dashboard/playground", description: "Tạo đề thi" },
+  { icon: Library, label: "Question Bank", path: "/dashboard/question-bank", description: "Ngân hàng câu hỏi" },
   { icon: Brain, label: "Spaced Repetition", path: "/dashboard/spaced-repetition", description: "Ôn tập thông minh" },
   { icon: History, label: "Exam History", path: "/dashboard/history", description: "Lịch sử làm bài" },
   { icon: FileText, label: "Documentation", path: "/dashboard/docs", description: "Tài liệu hướng dẫn" },

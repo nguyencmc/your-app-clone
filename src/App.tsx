@@ -24,6 +24,7 @@ import Admin from "./pages/dashboard/Admin";
 import ExamManagement from "./pages/dashboard/ExamManagement";
 import ExamHistory from "./pages/dashboard/ExamHistory";
 import SpacedRepetition from "./pages/dashboard/SpacedRepetition";
+import QuestionBank from "./pages/dashboard/QuestionBank";
 import NotFound from "./pages/NotFound";
 import AITutorChat from "./components/chat/AITutorChat";
 import { Loader2 } from "lucide-react";
@@ -198,6 +199,14 @@ const AppRoutes = () => (
       element={
         <ProtectedRoute>
           <SpacedRepetition />
+        </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/dashboard/question-bank"
+      element={
+        <ProtectedRoute>
+          <QuestionBank />
         </ProtectedRoute>
       }
     />
