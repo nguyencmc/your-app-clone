@@ -9,8 +9,11 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useExamAttempts } from "@/hooks/useExamAttempts";
+import { useAntiCheat } from "@/hooks/useAntiCheat";
 import { examService } from "@/services";
 import { exportExamResultsToPDF } from "@/lib/documentExport";
+import { AntiCheatOverlay } from "@/components/exam/AntiCheatOverlay";
+import { AntiCheatBadge } from "@/components/exam/AntiCheatBadge";
 import { Clock, CheckCircle, XCircle, ArrowLeft, ArrowRight, Send, Trophy, RotateCcw, Save, Loader2, FileText } from "lucide-react";
 
 interface Question {
@@ -28,6 +31,7 @@ interface Exam {
   difficulty: string;
   time_limit: number;
   questions: Question[];
+  ai_protection?: boolean;
 }
 
 type ExamState = "taking" | "submitted";
@@ -49,8 +53,48 @@ const TakeExam = () => {
   const [isExporting, setIsExporting] = useState(false);
   const [savingExplanations, setSavingExplanations] = useState<Record<string, boolean>>({});
   const [savedExplanations, setSavedExplanations] = useState<Record<string, boolean>>({});
+  const [antiCheatEnabled, setAntiCheatEnabled] = useState(false);
+  const [skipFullscreen, setSkipFullscreen] = useState(false);
   const startTimeRef = useRef<number>(Date.now());
   const timeSpentRef = useRef<number>(0);
+  const handleSubmitRef = useRef<(() => void) | null>(null);
+
+  const MAX_WARNINGS = 3;
+
+  const {
+    isFullscreen,
+    warningCount,
+    enterFullscreen,
+    showFullscreenPrompt,
+    dismissFullscreenPrompt,
+    isTabVisible,
+  } = useAntiCheat({
+    enabled: antiCheatEnabled && examState === "taking" && !skipFullscreen,
+    maxWarnings: MAX_WARNINGS,
+    onMaxWarningsReached: () => {
+      toast({
+        title: "Bài thi đã được nộp tự động",
+        description: "Bạn đã vượt quá số lần vi phạm cho phép.",
+        variant: "destructive",
+      });
+      if (handleSubmitRef.current) {
+        handleSubmitRef.current();
+      }
+    },
+    onViolation: (violation) => {
+      const messages: Record<string, string> = {
+        tab_switch: "Phát hiện chuyển tab/cửa sổ",
+        fullscreen_exit: "Phát hiện thoát chế độ toàn màn hình",
+        copy_paste: "Không được phép copy/paste",
+        right_click: "Không được phép click chuột phải",
+      };
+      toast({
+        title: "Cảnh báo vi phạm!",
+        description: messages[violation.type],
+        variant: "destructive",
+      });
+    },
+  });
 
   useEffect(() => {
     const fetchExam = async () => {
@@ -85,6 +129,8 @@ const TakeExam = () => {
       
       setExam(examData);
       setTimeRemaining(data.time_limit * 60);
+      // Enable anti-cheat if exam has ai_protection enabled
+      setAntiCheatEnabled(data.ai_protection === true);
       setLoading(false);
     };
 
@@ -128,6 +174,11 @@ const TakeExam = () => {
       setIsSaving(false);
     }
   }, [exam, id, answers, isSaving, saveAttempt]);
+
+  // Update ref for anti-cheat callback
+  useEffect(() => {
+    handleSubmitRef.current = handleSubmit;
+  }, [handleSubmit]);
 
   useEffect(() => {
     if (examState !== "taking" || timeRemaining <= 0) return;
@@ -387,6 +438,20 @@ const TakeExam = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Anti-Cheat Overlay */}
+      {antiCheatEnabled && (
+        <AntiCheatOverlay
+          showFullscreenPrompt={showFullscreenPrompt && !skipFullscreen}
+          warningCount={warningCount}
+          maxWarnings={MAX_WARNINGS}
+          isFullscreen={isFullscreen}
+          isTabVisible={isTabVisible}
+          onEnterFullscreen={enterFullscreen}
+          onDismissPrompt={dismissFullscreenPrompt}
+          onContinueWithoutFullscreen={() => setSkipFullscreen(true)}
+        />
+      )}
+
       {/* Header */}
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border">
         <div className="container mx-auto px-4 py-4">
@@ -395,12 +460,19 @@ const TakeExam = () => {
               <h1 className="text-xl font-semibold">{exam.title}</h1>
               <p className="text-sm text-muted-foreground">{exam.subject} • {exam.difficulty}</p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${timeRemaining < 60 ? 'bg-red-500/20 text-red-500' : 'bg-secondary'}`}>
-                <Clock className="h-5 w-5" />
-                <span className="font-mono text-lg font-semibold">{formatTime(timeRemaining)}</span>
+            <div className="flex items-center gap-2 sm:gap-4">
+              {/* Anti-Cheat Badge */}
+              <AntiCheatBadge
+                isEnabled={antiCheatEnabled}
+                warningCount={warningCount}
+                maxWarnings={MAX_WARNINGS}
+                isFullscreen={isFullscreen}
+              />
+              <div className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg ${timeRemaining < 60 ? 'bg-red-500/20 text-red-500' : 'bg-secondary'}`}>
+                <Clock className="h-4 w-4 sm:h-5 sm:w-5" />
+                <span className="font-mono text-base sm:text-lg font-semibold">{formatTime(timeRemaining)}</span>
               </div>
-              <Button variant="outline" onClick={() => navigate("/dashboard")}>
+              <Button variant="outline" size="sm" onClick={() => navigate("/dashboard")}>
                 Exit
               </Button>
             </div>
