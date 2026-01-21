@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { Calendar, ChevronDown, Clock, FolderOpen, GraduationCap, Plus, Shield, Shuffle, Sparkles } from "lucide-react";
+import { Calendar, ChevronDown, Clock, FolderOpen, GraduationCap, Plus, Shield, Shuffle, Sparkles, Timer, BookOpen, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { ExamFormData } from "../CreateExamWizard";
 import { Course } from "@/hooks/useCourses";
@@ -103,6 +104,81 @@ export default function ExamDetailsStep({
               }
               className="bg-muted/30 border-border/40 h-12"
             />
+          </div>
+
+          {/* Subject, Difficulty, Time Limit - Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6">
+            {/* Subject */}
+            <div className="space-y-2">
+              <Label className="text-primary flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                Subject
+              </Label>
+              <Input
+                placeholder="e.g. Mathematics, Physics"
+                value={formData.subject}
+                onChange={(e) =>
+                  setFormData({ ...formData, subject: e.target.value })
+                }
+                className="bg-muted/30 border-border/40 h-12"
+              />
+            </div>
+
+            {/* Difficulty */}
+            <div className="space-y-2">
+              <Label className="text-primary flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                Difficulty
+              </Label>
+              <Select
+                value={formData.difficulty}
+                onValueChange={(value: "easy" | "medium" | "hard") =>
+                  setFormData({ ...formData, difficulty: value })
+                }
+              >
+                <SelectTrigger className="bg-muted/30 border-border/40 h-12">
+                  <SelectValue placeholder="Select difficulty" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="easy">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-green-500" />
+                      Easy
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="medium">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                      Medium
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="hard">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-red-500" />
+                      Hard
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Time Limit */}
+            <div className="space-y-2">
+              <Label className="text-primary flex items-center gap-2">
+                <Timer className="w-4 h-4" />
+                Time Limit (minutes)
+              </Label>
+              <Input
+                type="number"
+                min={1}
+                max={300}
+                value={formData.timeLimit}
+                onChange={(e) =>
+                  setFormData({ ...formData, timeLimit: parseInt(e.target.value) || 60 })
+                }
+                className="bg-muted/30 border-border/40 h-12"
+              />
+            </div>
           </div>
 
           {/* Date and Time - Stack on mobile */}
