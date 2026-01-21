@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Brain, Clock, Copy, ListChecks, Loader2, Minus, Plus, Send, X, ChevronDown, ChevronUp, Upload } from "lucide-react";
+import { Brain, Clock, Copy, ListChecks, Loader2, Minus, Plus, Send, X, ChevronDown, ChevronUp, Upload, Library } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Question } from "../CreateExamWizard";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import FileUploadQuestions from "./FileUploadQuestions";
-
+import QuestionBankSelector from "./QuestionBankSelector";
 interface AddQuestionsStepProps {
   questions: Question[];
   setQuestions: React.Dispatch<React.SetStateAction<Question[]>>;
@@ -26,6 +26,7 @@ export default function AddQuestionsStep({
   const [aiPrompt, setAiPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [showFileUpload, setShowFileUpload] = useState(false);
+  const [showQuestionBank, setShowQuestionBank] = useState(false);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
   const [showAiPanel, setShowAiPanel] = useState(false);
   const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(new Set());
@@ -116,6 +117,14 @@ export default function AddQuestionsStep({
     toast({
       title: "Questions Imported!",
       description: `Successfully imported ${uploadedQuestions.length} questions from file.`,
+    });
+  };
+
+  const handleQuestionBankSelect = (selectedQuestions: Question[]) => {
+    setQuestions((prev) => [...prev, ...selectedQuestions]);
+    toast({
+      title: "Questions Added!",
+      description: `Successfully added ${selectedQuestions.length} questions from library.`,
     });
   };
 
@@ -290,8 +299,20 @@ export default function AddQuestionsStep({
         />
       )}
 
+      {/* Question Bank Selector */}
+      <QuestionBankSelector
+        open={showQuestionBank}
+        onOpenChange={setShowQuestionBank}
+        onSelectQuestions={handleQuestionBankSelect}
+        existingQuestionIds={questions.map(q => q.id)}
+      />
+
       {/* Add Question Buttons */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+        <Button onClick={() => setShowQuestionBank(true)} variant="outline" className="h-12 gap-2 text-sm border-primary/50 hover:bg-primary/10">
+          <Library className="w-4 h-4 text-primary" />
+          <span className="hidden sm:inline">From</span> Library
+        </Button>
         <Button onClick={handleAddMultipleChoice} variant="outline" className="h-12 gap-2 text-sm">
           <Plus className="w-4 h-4" />
           <span className="hidden sm:inline">Add</span> MC
