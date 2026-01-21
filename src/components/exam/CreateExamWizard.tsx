@@ -30,6 +30,9 @@ export interface ExamFormData {
   aiProtection: boolean;
   randomizeOrder: boolean;
   courseId: string | null;
+  timeLimit: number;
+  subject: string;
+  difficulty: "easy" | "medium" | "hard";
 }
 
 export default function CreateExamWizard() {
@@ -50,6 +53,9 @@ export default function CreateExamWizard() {
     aiProtection: false,
     randomizeOrder: false,
     courseId: null,
+    timeLimit: 60,
+    subject: "",
+    difficulty: "medium",
   });
 
   useEffect(() => {
@@ -128,10 +134,10 @@ export default function CreateExamWizard() {
         .insert([{
           user_id: userId,
           title: formData.examName,
-          subject: selectedCourse?.subject || "General",
-          difficulty: "medium",
+          subject: formData.subject || selectedCourse?.subject || "General",
+          difficulty: formData.difficulty,
           question_type: "multiple choice",
-          time_limit: 60,
+          time_limit: formData.timeLimit,
           questions: JSON.parse(JSON.stringify(questions)),
           question_count: questions.length,
           course_id: formData.courseId,
