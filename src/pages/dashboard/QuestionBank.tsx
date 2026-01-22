@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -95,8 +96,9 @@ export default function QuestionBank() {
   const hasActiveFilters = filters.search || filters.subject || filters.difficulty || filters.tags.length > 0;
 
   return (
-    <div className="min-h-screen bg-background flex">
-      <DashboardSidebar />
+    <SidebarProvider>
+      <div className="min-h-screen bg-background flex w-full">
+        <DashboardSidebar />
       
       <main className="flex-1 p-4 lg:p-8 lg:ml-64">
         <div className="max-w-7xl mx-auto">
@@ -336,11 +338,13 @@ export default function QuestionBank() {
       />
 
       {/* Import Dialog */}
+      {/* Import Dialog */}
       <ImportExamDialog
         open={showImportDialog}
         onOpenChange={setShowImportDialog}
         onImport={importFromExam}
       />
-    </div>
+      </div>
+    </SidebarProvider>
   );
 }
