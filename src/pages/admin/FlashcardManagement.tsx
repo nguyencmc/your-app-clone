@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useUserRole } from '@/hooks/useUserRole';
+import { usePermissionsContext } from '@/contexts/PermissionsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import {
   Trash2,
   ArrowLeft,
 } from 'lucide-react';
+import { createAuditLog } from '@/hooks/useAuditLogs';
 import {
   Table,
   TableBody,
@@ -47,7 +48,7 @@ interface FlashcardSet {
 }
 
 const FlashcardManagement = () => {
-  const { isAdmin, isTeacher, loading: roleLoading } = useUserRole();
+  const { isAdmin, hasPermission, loading: roleLoading } = usePermissionsContext();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -55,24 +56,27 @@ const FlashcardManagement = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const hasAccess = isAdmin || isTeacher;
+  const canView = hasPermission('flashcards.view');
+  const canCreate = hasPermission('flashcards.create');
+  const canEdit = hasPermission('flashcards.edit');
+  const canDelete = hasPermission('flashcards.delete');
 
   useEffect(() => {
-    if (!roleLoading && !hasAccess) {
+    if (!roleLoading && !canView) {
       navigate('/');
       toast({
         title: "Không có quyền truy cập",
-        description: "Bạn cần quyền Teacher hoặc Admin",
+        description: "Bạn không có quyền xem flashcards",
         variant: "destructive",
       });
     }
-  }, [hasAccess, roleLoading, navigate, toast]);
+  }, [canView, roleLoading, navigate, toast]);
 
   useEffect(() => {
-    if (hasAccess) {
+    if (canView) {
       fetchData();
     }
-  }, [hasAccess]);
+  }, [canView]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -87,6 +91,9 @@ const FlashcardManagement = () => {
   };
 
   const handleDelete = async (setId: string) => {
+    // Get set info for audit log
+    const setToDelete = sets.find(s => s.id === setId);
+    
     // First delete all flashcards in this set
     await supabase.from('flashcards').delete().eq('set_id', setId);
 
@@ -103,6 +110,16 @@ const FlashcardManagement = () => {
       });
       return;
     }
+
+    // Create audit log
+    await createAuditLog(
+      'delete',
+      'flashcard_set',
+      setId,
+      { title: setToDelete?.title, category: setToDelete?.category },
+      null,
+      { card_count: setToDelete?.card_count }
+    );
 
     toast({
       title: "Thành công",
@@ -130,7 +147,7 @@ const FlashcardManagement = () => {
     );
   }
 
-  if (!hasAccess) {
+  if (!canView) {
     return null;
   }
 
@@ -155,12 +172,14 @@ const FlashcardManagement = () => {
               <p className="text-muted-foreground mt-1">{sets.length} bộ thẻ</p>
             </div>
           </div>
-          <Link to="/admin/flashcards/create">
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              Tạo bộ thẻ mới
-            </Button>
-          </Link>
+          {canCreate && (
+            <Link to="/admin/flashcards/create">
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                Tạo bộ thẻ mới
+              </Button>
+            </Link>
+          )}
         </div>
 
         {/* Search */}
@@ -235,32 +254,36 @@ const FlashcardManagement = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <Link to={`/admin/flashcards/${set.id}`}>
-                            <Button variant="ghost" size="icon">
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                          </Link>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="text-destructive">
-                                <Trash2 className="w-4 h-4" />
+                          {canEdit && (
+                            <Link to={`/admin/flashcards/${set.id}`}>
+                              <Button variant="ghost" size="icon">
+                                <Edit className="w-4 h-4" />
                               </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Xóa bộ thẻ?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Hành động này không thể hoàn tác. Tất cả thẻ trong bộ sẽ bị xóa.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Hủy</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(set.id)}>
-                                  Xóa
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                            </Link>
+                          )}
+                          {canDelete && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="text-destructive">
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Xóa bộ thẻ?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Hành động này không thể hoàn tác. Tất cả thẻ trong bộ sẽ bị xóa.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Hủy</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDelete(set.id)}>
+                                    Xóa
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserRole } from '@/hooks/useUserRole';
+import { usePermissionsContext } from '@/contexts/PermissionsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -56,6 +56,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
+import { createAuditLog } from '@/hooks/useAuditLogs';
 
 interface EnrichedUser {
   id: string;
@@ -73,7 +74,7 @@ interface EnrichedUser {
 
 const UserManagement = () => {
   const { user: currentUser, session } = useAuth();
-  const { isAdmin, loading: roleLoading } = useUserRole();
+  const { isAdmin, hasPermission, loading: roleLoading } = usePermissionsContext();
   const navigate = useNavigate();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -106,22 +107,28 @@ const UserManagement = () => {
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [importing, setImporting] = useState(false);
 
+  const canView = hasPermission('users.view');
+  const canCreate = hasPermission('users.create');
+  const canEdit = hasPermission('users.edit');
+  const canDelete = hasPermission('users.delete');
+  const canAssignRoles = hasPermission('roles.assign');
+
   useEffect(() => {
-    if (!roleLoading && !isAdmin) {
+    if (!roleLoading && !canView) {
       navigate('/');
       toast({
         title: "Không có quyền truy cập",
-        description: "Bạn cần quyền Admin để truy cập trang này",
+        description: "Bạn không có quyền quản lý người dùng",
         variant: "destructive",
       });
     }
-  }, [isAdmin, roleLoading, navigate, toast]);
+  }, [canView, roleLoading, navigate, toast]);
 
   useEffect(() => {
-    if (isAdmin && session) {
+    if (canView && session) {
       fetchUsers();
     }
-  }, [isAdmin, session]);
+  }, [canView, session]);
 
   const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
   const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -202,6 +209,15 @@ const UserManagement = () => {
         throw new Error(result.error);
       }
 
+      // Create audit log
+      await createAuditLog(
+        'create',
+        'user',
+        result.user?.id,
+        null,
+        { email: newUserEmail, full_name: newUserName, role: newUserRole }
+      );
+
       toast({
         title: "Thành công",
         description: "Đã tạo người dùng mới",
@@ -243,6 +259,16 @@ const UserManagement = () => {
         throw new Error(result.error);
       }
 
+      // Create audit log
+      await createAuditLog(
+        'update_password',
+        'user',
+        selectedUser.id,
+        null,
+        { email: selectedUser.email },
+        { action_detail: 'Password changed by admin' }
+      );
+
       toast({
         title: "Thành công",
         description: "Đã đổi mật khẩu",
@@ -275,6 +301,15 @@ const UserManagement = () => {
         throw new Error(result.error);
       }
 
+      // Create audit log
+      await createAuditLog(
+        'delete',
+        'user',
+        userToDelete.id,
+        { email: userToDelete.email, full_name: userToDelete.profile?.full_name, roles: userToDelete.roles },
+        null
+      );
+
       toast({
         title: "Thành công",
         description: "Đã xóa người dùng",
@@ -304,6 +339,20 @@ const UserManagement = () => {
       if (result.error) {
         throw new Error(result.error);
       }
+
+      // Get user info for audit log
+      const userInfo = users.find(u => u.id === userId);
+      const oldRoles = userInfo?.roles || [];
+
+      // Create audit log
+      await createAuditLog(
+        'update_role',
+        'user',
+        userId,
+        { roles: oldRoles },
+        { roles: [newRole === 'none' ? 'user' : newRole] },
+        { email: userInfo?.email }
+      );
 
       toast({
         title: "Thành công",
@@ -446,7 +495,7 @@ const UserManagement = () => {
     );
   }
 
-  if (!isAdmin) {
+  if (!canView) {
     return null;
   }
 

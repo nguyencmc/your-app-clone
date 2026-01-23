@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserRole } from '@/hooks/useUserRole';
+import { usePermissionsContext } from '@/contexts/PermissionsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
+import { createAuditLog } from '@/hooks/useAuditLogs';
 
 interface Flashcard {
   id?: string;
@@ -49,7 +50,7 @@ const FlashcardEditor = () => {
   const { id } = useParams();
   const isEditing = !!id;
   const { user } = useAuth();
-  const { isAdmin, isTeacher, loading: roleLoading } = useUserRole();
+  const { isAdmin, hasPermission, loading: roleLoading } = usePermissionsContext();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -65,7 +66,9 @@ const FlashcardEditor = () => {
   // Cards
   const [cards, setCards] = useState<Flashcard[]>([]);
 
-  const hasAccess = isAdmin || isTeacher;
+  const canCreate = hasPermission('flashcards.create');
+  const canEdit = hasPermission('flashcards.edit');
+  const hasAccess = isEditing ? canEdit : canCreate;
 
   useEffect(() => {
     if (!roleLoading && !hasAccess) {
@@ -200,6 +203,15 @@ const FlashcardEditor = () => {
 
         if (cardsError) throw cardsError;
       }
+
+      // Create audit log
+      await createAuditLog(
+        isEditing ? 'update' : 'create',
+        'flashcard_set',
+        setId,
+        isEditing ? { title, category, card_count: cards.length } : null,
+        { title, category, card_count: cards.length, is_public: isPublic }
+      );
 
       toast({
         title: "Thành công",

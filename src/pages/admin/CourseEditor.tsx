@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserRole } from '@/hooks/useUserRole';
+import { usePermissionsContext } from '@/contexts/PermissionsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { LessonEditor, CourseLesson, LessonAttachment } from '@/components/admin/course/LessonEditor';
 import { CourseTestEditor } from '@/components/admin/course/CourseTestEditor';
+import { createAuditLog } from '@/hooks/useAuditLogs';
 
 interface CourseCategory {
   id: string;
@@ -70,7 +71,7 @@ interface CourseFormData {
 const CourseEditor = () => {
   const { id } = useParams();
   const { user } = useAuth();
-  const { isAdmin, isTeacher, loading: roleLoading } = useUserRole();
+  const { isAdmin, hasPermission, canEditOwn, loading: roleLoading } = usePermissionsContext();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -98,15 +99,17 @@ const CourseEditor = () => {
   const [newRequirement, setNewRequirement] = useState('');
   const [newWhatYouLearn, setNewWhatYouLearn] = useState('');
 
-  const hasAccess = isAdmin || isTeacher;
+  const canCreate = hasPermission('courses.create');
+  const canEdit = hasPermission('courses.edit');
   const isEditing = !!id;
+  const hasAccess = isEditing ? (canEdit || hasPermission('courses.edit_own')) : canCreate;
 
   useEffect(() => {
     if (!roleLoading && !hasAccess) {
       navigate('/');
       toast({
         title: "Không có quyền truy cập",
-        description: "Bạn cần quyền Teacher hoặc Admin",
+        description: "Bạn không có quyền thực hiện thao tác này",
         variant: "destructive",
       });
     }
@@ -468,6 +471,21 @@ const CourseEditor = () => {
           }
         }
       }
+
+      // Create audit log
+      await createAuditLog(
+        isEditing ? 'update' : 'create',
+        'course',
+        courseId,
+        isEditing ? { title: formData.title, slug: formData.slug } : null,
+        { 
+          title: formData.title, 
+          slug: formData.slug, 
+          is_published: formData.is_published,
+          lesson_count: totalLessons,
+          section_count: sections.length 
+        }
+      );
 
       toast({
         title: "Thành công",

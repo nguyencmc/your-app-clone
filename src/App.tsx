@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { PermissionsProvider } from "@/contexts/PermissionsContext";
 import { MiniPlayerProvider } from "@/contexts/MiniPlayerContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { MiniPlayer } from "@/components/podcast/MiniPlayer";
@@ -43,6 +44,8 @@ import CourseManagement from "./pages/admin/CourseManagement";
 import CourseEditor from "./pages/admin/CourseEditor";
 import QuestionSetManagement from "./pages/admin/QuestionSetManagement";
 import QuestionSetEditor from "./pages/admin/QuestionSetEditor";
+import PermissionManagement from "./pages/admin/PermissionManagement";
+import AuditLogs from "./pages/admin/AuditLogs";
 import StudentDashboard from "./pages/StudentDashboard";
 import Achievements from "./pages/Achievements";
 import StudyGroups from "./pages/StudyGroups";
@@ -73,7 +76,8 @@ const App = () => (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <TooltipProvider>
         <AuthProvider>
-          <MiniPlayerProvider>
+          <PermissionsProvider>
+            <MiniPlayerProvider>
             <Toaster />
             <Sonner />
             <BrowserRouter>
@@ -125,6 +129,8 @@ const App = () => (
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/teacher" element={<TeacherDashboard />} />
               <Route path="/admin/users" element={<UserManagement />} />
+              <Route path="/admin/permissions" element={<PermissionManagement />} />
+              <Route path="/admin/audit-logs" element={<AuditLogs />} />
               <Route path="/admin/categories" element={<CategoryManagement />} />
               <Route path="/admin/exams" element={<ExamManagement />} />
               <Route path="/admin/exams/create" element={<ExamEditor />} />
@@ -147,7 +153,8 @@ const App = () => (
               </Routes>
               <MiniPlayer />
             </BrowserRouter>
-          </MiniPlayerProvider>
+            </MiniPlayerProvider>
+          </PermissionsProvider>
         </AuthProvider>
       </TooltipProvider>
     </ThemeProvider>

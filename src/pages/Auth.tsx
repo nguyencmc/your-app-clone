@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Mail, Lock, User, Loader2 } from "lucide-react";
 import { z } from "zod";
+import logo from "@/assets/logo.png";
 
 const signInSchema = z.object({
   email: z.string().email("Email không hợp lệ"),
@@ -189,13 +190,10 @@ const Auth = () => {
         <div className="w-full max-w-md">
           <div className="bg-card rounded-2xl shadow-card p-8 border border-border/50">
             <div className="text-center mb-8">
-              <Link to="/" className="inline-block">
-                <span className="text-2xl font-extrabold tracking-tight">
-                  <span className="text-foreground">The</span>
-                  <span className="text-primary"> Best</span>
-                </span>
-                <span className="block text-xl font-bold text-accent -mt-1">
-                  Study
+              <Link to="/" className="inline-flex items-center gap-2">
+                <img src={logo} alt="AI-Exam.cloud" className="h-10 w-auto" />
+                <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  AI-Exam.cloud
                 </span>
               </Link>
               <h1 className="text-2xl font-bold text-foreground mt-4">
@@ -262,13 +260,10 @@ const Auth = () => {
         <div className="bg-card rounded-2xl shadow-card p-8 border border-border/50">
           {/* Logo */}
           <div className="text-center mb-8">
-            <Link to="/" className="inline-block">
-              <span className="text-2xl font-extrabold tracking-tight">
-                <span className="text-foreground">The</span>
-                <span className="text-primary"> Best</span>
-              </span>
-              <span className="block text-xl font-bold text-accent -mt-1">
-                Study
+            <Link to="/" className="inline-flex items-center gap-2">
+              <img src={logo} alt="AI-Exam.cloud" className="h-10 w-auto" />
+              <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                AI-Exam.cloud
               </span>
             </Link>
             <h1 className="text-2xl font-bold text-foreground mt-4">

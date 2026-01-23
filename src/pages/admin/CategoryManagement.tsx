@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useUserRole } from '@/hooks/useUserRole';
+import { usePermissionsContext } from '@/contexts/PermissionsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -51,6 +51,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
+import { createAuditLog } from '@/hooks/useAuditLogs';
 
 interface BaseCategory {
   id: string;
@@ -82,7 +83,7 @@ interface BookCategory extends BaseCategory {
 type CategoryType = 'exam' | 'podcast' | 'book';
 
 const CategoryManagement = () => {
-  const { isAdmin, isTeacher, loading: roleLoading } = useUserRole();
+  const { isAdmin, hasPermission, loading: roleLoading } = usePermissionsContext();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -105,24 +106,27 @@ const CategoryManagement = () => {
   });
   const [saving, setSaving] = useState(false);
 
-  const hasAccess = isAdmin || isTeacher;
+  const canView = hasPermission('categories.view');
+  const canCreate = hasPermission('categories.create');
+  const canEdit = hasPermission('categories.edit');
+  const canDelete = hasPermission('categories.delete');
 
   useEffect(() => {
-    if (!roleLoading && !hasAccess) {
+    if (!roleLoading && !canView) {
       navigate('/');
       toast({
         title: "Không có quyền truy cập",
-        description: "Bạn cần quyền Teacher hoặc Admin",
+        description: "Bạn không có quyền xem danh mục",
         variant: "destructive",
       });
     }
-  }, [hasAccess, roleLoading, navigate, toast]);
+  }, [canView, roleLoading, navigate, toast]);
 
   useEffect(() => {
-    if (hasAccess) {
+    if (canView) {
       fetchAllCategories();
     }
-  }, [hasAccess]);
+  }, [canView]);
 
   const fetchAllCategories = async () => {
     setLoading(true);
@@ -229,9 +233,18 @@ const CategoryManagement = () => {
         title: "Thành công",
         description: "Đã cập nhật danh mục",
       });
+
+      // Create audit log for update
+      await createAuditLog(
+        'update',
+        `${activeTab}_category`,
+        editingCategory.id,
+        { name: editingCategory.name, slug: editingCategory.slug },
+        { name: formData.name, slug, is_featured: formData.is_featured }
+      );
     } else {
       // Create
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from(tableName)
         .insert({
           name: formData.name,
@@ -240,7 +253,9 @@ const CategoryManagement = () => {
           icon_url: formData.icon_url || null,
           display_order: formData.display_order,
           is_featured: formData.is_featured,
-        });
+        })
+        .select()
+        .single();
 
       if (error) {
         toast({
@@ -256,6 +271,15 @@ const CategoryManagement = () => {
         title: "Thành công",
         description: "Đã tạo danh mục mới",
       });
+
+      // Create audit log for create
+      await createAuditLog(
+        'create',
+        `${activeTab}_category`,
+        data?.id,
+        null,
+        { name: formData.name, slug, is_featured: formData.is_featured }
+      );
     }
 
     setSaving(false);
@@ -265,6 +289,9 @@ const CategoryManagement = () => {
 
   const handleDelete = async (categoryId: string) => {
     const tableName = getTableName(activeTab);
+    
+    // Get category info for audit log
+    const categoryToDelete = getCurrentCategories()?.find(c => c.id === categoryId);
     
     const { error } = await supabase
       .from(tableName)
@@ -279,6 +306,15 @@ const CategoryManagement = () => {
       });
       return;
     }
+
+    // Create audit log
+    await createAuditLog(
+      'delete',
+      `${activeTab}_category`,
+      categoryId,
+      { name: categoryToDelete?.name, slug: categoryToDelete?.slug },
+      null
+    );
 
     toast({
       title: "Thành công",
@@ -327,7 +363,7 @@ const CategoryManagement = () => {
     );
   }
 
-  if (!hasAccess) {
+  if (!canView) {
     return null;
   }
 
@@ -354,10 +390,12 @@ const CategoryManagement = () => {
               <p className="text-muted-foreground mt-1">Tạo và quản lý các danh mục nội dung</p>
             </div>
           </div>
-          <Button onClick={handleOpenCreate} className="gap-2">
-            <Plus className="w-4 h-4" />
-            Tạo danh mục mới
-          </Button>
+          {canCreate && (
+            <Button onClick={handleOpenCreate} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Tạo danh mục mới
+            </Button>
+          )}
         </div>
 
         {/* Tabs */}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserRole } from '@/hooks/useUserRole';
+import { usePermissionsContext } from '@/contexts/PermissionsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -38,6 +38,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
+import { createAuditLog } from '@/hooks/useAuditLogs';
 
 interface Exam {
   id: string;
@@ -59,7 +60,7 @@ interface ExamCategory {
 }
 
 const ExamManagement = () => {
-  const { isAdmin, isTeacher, loading: roleLoading } = useUserRole();
+  const { isAdmin, hasPermission, canEditOwn, canDeleteOwn, loading: roleLoading } = usePermissionsContext();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -69,31 +70,32 @@ const ExamManagement = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const hasAccess = isAdmin || isTeacher;
+  const canView = hasPermission('exams.view');
+  const canCreate = hasPermission('exams.create');
 
   useEffect(() => {
-    if (!roleLoading && !hasAccess) {
+    if (!roleLoading && !canView) {
       navigate('/');
       toast({
         title: "Không có quyền truy cập",
-        description: "Bạn cần quyền Teacher hoặc Admin",
+        description: "Bạn không có quyền xem đề thi",
         variant: "destructive",
       });
     }
-  }, [hasAccess, roleLoading, navigate, toast]);
+  }, [canView, roleLoading, navigate, toast]);
 
   useEffect(() => {
-    if (hasAccess && user) {
+    if (canView && user) {
       fetchData();
     }
-  }, [hasAccess, user]);
+  }, [canView, user]);
 
   const fetchData = async () => {
     setLoading(true);
     
-    // Admin sees all exams, Teacher sees only their own
+    // Admin sees all exams, others see only their own if they have edit_own permission
     let examsQuery = supabase.from('exams').select('*').order('created_at', { ascending: false });
-    if (isTeacher && !isAdmin) {
+    if (!isAdmin && hasPermission('exams.edit_own')) {
       examsQuery = examsQuery.eq('creator_id', user?.id);
     }
     
@@ -108,6 +110,9 @@ const ExamManagement = () => {
   };
 
   const handleDelete = async (examId: string) => {
+    // Get exam info for audit log
+    const examToDelete = exams.find(e => e.id === examId);
+
     // First delete all questions associated with this exam
     const { error: questionsError } = await supabase
       .from('questions')
@@ -136,6 +141,15 @@ const ExamManagement = () => {
       });
       return;
     }
+
+    // Create audit log
+    await createAuditLog(
+      'delete',
+      'exam',
+      examId,
+      { title: examToDelete?.title, slug: examToDelete?.slug, question_count: examToDelete?.question_count },
+      null
+    );
 
     toast({
       title: "Thành công",
@@ -169,7 +183,7 @@ const ExamManagement = () => {
     );
   }
 
-  if (!hasAccess) {
+  if (!canView) {
     return null;
   }
 
@@ -194,12 +208,14 @@ const ExamManagement = () => {
               <p className="text-muted-foreground mt-1">{exams.length} đề thi</p>
             </div>
           </div>
-          <Link to="/admin/exams/create">
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              Tạo đề thi mới
-            </Button>
-          </Link>
+          {canCreate && (
+            <Link to="/admin/exams/create">
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                Tạo đề thi mới
+              </Button>
+            </Link>
+          )}
         </div>
 
         {/* Search */}

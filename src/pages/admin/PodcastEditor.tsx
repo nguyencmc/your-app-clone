@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useUserRole } from '@/hooks/useUserRole';
+import { usePermissionsContext } from '@/contexts/PermissionsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/Header';
@@ -40,6 +40,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useToast } from '@/hooks/use-toast';
+import { createAuditLog } from '@/hooks/useAuditLogs';
 
 interface PodcastCategory {
   id: string;
@@ -49,7 +50,7 @@ interface PodcastCategory {
 const PodcastEditor = () => {
   const { id } = useParams();
   const isEditing = !!id;
-  const { isAdmin, isTeacher, loading: roleLoading } = useUserRole();
+  const { isAdmin, hasPermission, loading: roleLoading } = usePermissionsContext();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -78,7 +79,9 @@ const PodcastEditor = () => {
   const [hostName, setHostName] = useState('The Best Study');
   const [episodeNumber, setEpisodeNumber] = useState(1);
 
-  const hasAccess = isAdmin || isTeacher;
+  const canCreate = hasPermission('podcasts.create');
+  const canEdit = hasPermission('podcasts.edit');
+  const hasAccess = isEditing ? (canEdit || hasPermission('podcasts.edit_own')) : canCreate;
 
   useEffect(() => {
     if (!roleLoading && !hasAccess) {
@@ -351,6 +354,15 @@ const PodcastEditor = () => {
 
         if (error) throw error;
       }
+
+      // Create audit log
+      await createAuditLog(
+        isEditing ? 'update' : 'create',
+        'podcast',
+        id,
+        isEditing ? { title, slug } : null,
+        { title, slug, difficulty, duration_seconds: (durationMinutes * 60) + durationSeconds }
+      );
 
       toast({
         title: "Thành công",

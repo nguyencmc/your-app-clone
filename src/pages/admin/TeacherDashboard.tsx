@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserRole } from '@/hooks/useUserRole';
+import { usePermissionsContext } from '@/contexts/PermissionsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -37,7 +37,7 @@ interface RecentExam {
 
 const TeacherDashboard = () => {
   const { user } = useAuth();
-  const { isAdmin, isTeacher, loading: roleLoading } = useUserRole();
+  const { isAdmin, hasAnyPermission, loading: roleLoading } = usePermissionsContext();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -50,14 +50,17 @@ const TeacherDashboard = () => {
   const [recentExams, setRecentExams] = useState<RecentExam[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const hasAccess = isAdmin || isTeacher;
+  // Check if user has any content management permissions
+  const hasAccess = hasAnyPermission([
+    'exams.view', 'courses.view', 'flashcards.view', 'podcasts.view', 'questions.view'
+  ]);
 
   useEffect(() => {
     if (!roleLoading && !hasAccess) {
       navigate('/');
       toast({
         title: "Không có quyền truy cập",
-        description: "Bạn cần quyền Teacher hoặc Admin để truy cập trang này",
+        description: "Bạn không có quyền truy cập khu vực này",
         variant: "destructive",
       });
     }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useUserRole } from '@/hooks/useUserRole';
+import { usePermissionsContext } from '@/contexts/PermissionsContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -55,6 +55,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
+import { createAuditLog } from '@/hooks/useAuditLogs';
 
 interface Course {
   id: string;
@@ -85,7 +86,7 @@ interface CourseCategory {
 
 const CourseManagement = () => {
   const { user } = useAuth();
-  const { isAdmin, isTeacher, loading: roleLoading } = useUserRole();
+  const { isAdmin, hasPermission, canEditOwn, canDeleteOwn, loading: roleLoading } = usePermissionsContext();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -96,24 +97,28 @@ const CourseManagement = () => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
 
-  const hasAccess = isAdmin || isTeacher;
+  const canView = hasPermission('courses.view');
+  const canCreate = hasPermission('courses.create');
+  const canEdit = hasPermission('courses.edit');
+  const canDelete = hasPermission('courses.delete');
+  const canPublish = hasPermission('courses.publish');
 
   useEffect(() => {
-    if (!roleLoading && !hasAccess) {
+    if (!roleLoading && !canView) {
       navigate('/');
       toast({
         title: "Không có quyền truy cập",
-        description: "Bạn cần quyền Teacher hoặc Admin",
+        description: "Bạn không có quyền xem khóa học",
         variant: "destructive",
       });
     }
-  }, [hasAccess, roleLoading, navigate, toast]);
+  }, [canView, roleLoading, navigate, toast]);
 
   useEffect(() => {
-    if (hasAccess) {
+    if (canView) {
       fetchData();
     }
-  }, [hasAccess]);
+  }, [canView]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -123,8 +128,8 @@ const CourseManagement = () => {
       .select('*')
       .order('created_at', { ascending: false });
 
-    // If teacher (not admin), only show their courses
-    if (isTeacher && !isAdmin && user) {
+    // If not admin, only show own courses
+    if (!isAdmin && hasPermission('courses.edit_own') && user) {
       coursesQuery = coursesQuery.eq('creator_id', user.id);
     }
 
@@ -139,6 +144,9 @@ const CourseManagement = () => {
   };
 
   const handleDelete = async (courseId: string) => {
+    // Get course info for audit log
+    const courseToDelete = courses.find(c => c.id === courseId);
+
     // First delete all sections (lessons will be deleted via cascade)
     const { error: sectionsError } = await supabase
       .from('course_sections')
@@ -162,6 +170,15 @@ const CourseManagement = () => {
       });
       return;
     }
+
+    // Create audit log
+    await createAuditLog(
+      'delete',
+      'course',
+      courseId,
+      { title: courseToDelete?.title, slug: courseToDelete?.slug, lesson_count: courseToDelete?.lesson_count },
+      null
+    );
 
     toast({
       title: "Thành công",
@@ -259,7 +276,7 @@ const CourseManagement = () => {
     );
   }
 
-  if (!hasAccess) {
+  if (!canView) {
     return null;
   }
 
@@ -286,12 +303,14 @@ const CourseManagement = () => {
               </p>
             </div>
           </div>
-          <Link to="/admin/courses/create">
-            <Button className="gap-2 w-full sm:w-auto">
-              <Plus className="w-4 h-4" />
-              Tạo khóa học mới
-            </Button>
-          </Link>
+          {canCreate && (
+            <Link to="/admin/courses/create">
+              <Button className="gap-2 w-full sm:w-auto">
+                <Plus className="w-4 h-4" />
+                Tạo khóa học mới
+              </Button>
+            </Link>
+          )}
         </div>
 
         {/* Filters */}

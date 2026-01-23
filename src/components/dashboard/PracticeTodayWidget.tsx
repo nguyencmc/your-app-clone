@@ -322,23 +322,23 @@ export const PracticeTodayWidget = () => {
   if (!user) {
     return (
       <Card className="border-border/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="w-5 h-5 text-primary" />
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
             Hôm nay học gì?
           </CardTitle>
-          <CardDescription>Luyện tập mỗi ngày để tiến bộ</CardDescription>
+          <CardDescription className="text-xs sm:text-sm">Luyện tập mỗi ngày để tiến bộ</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="text-center py-6">
-            <LogIn className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-            <p className="text-muted-foreground mb-4">
-              Đăng nhập để theo dõi tiến độ học tập
+        <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
+          <div className="text-center py-4 sm:py-6">
+            <LogIn className="w-10 h-10 sm:w-12 sm:h-12 mx-auto text-muted-foreground mb-2 sm:mb-3" />
+            <p className="text-sm text-muted-foreground mb-3 sm:mb-4">
+              Đăng nhập để theo dõi tiến độ
             </p>
             <Link to="/auth">
-              <Button>
-                <LogIn className="w-4 h-4 mr-2" />
-                Đăng nhập ngay
+              <Button size="sm">
+                <LogIn className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                Đăng nhập
               </Button>
             </Link>
           </div>
@@ -351,17 +351,17 @@ export const PracticeTodayWidget = () => {
   if (loading) {
     return (
       <Card className="border-border/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className="w-5 h-5 text-primary" />
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
             Hôm nay học gì?
           </CardTitle>
-          <CardDescription>Luyện tập mỗi ngày để tiến bộ</CardDescription>
+          <CardDescription className="text-xs sm:text-sm">Luyện tập mỗi ngày để tiến bộ</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-20 w-full" />
+        <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6 space-y-3 sm:space-y-4">
+          <Skeleton className="h-16 sm:h-20 w-full" />
+          <Skeleton className="h-16 sm:h-20 w-full" />
+          <Skeleton className="h-16 sm:h-20 w-full" />
         </CardContent>
       </Card>
     );
@@ -369,48 +369,49 @@ export const PracticeTodayWidget = () => {
 
   return (
     <Card className="border-border/50">
-      <CardHeader>
+      <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-4">
         <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="w-5 h-5 text-primary" />
-              Hôm nay học gì?
+          <div className="min-w-0 flex-1">
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+              <span className="truncate">Hôm nay học gì?</span>
             </CardTitle>
-            <CardDescription>Luyện tập mỗi ngày để tiến bộ</CardDescription>
+            <CardDescription className="text-xs sm:text-sm">Luyện tập mỗi ngày để tiến bộ</CardDescription>
           </div>
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={() => { fetchData(); loadSmartRecommendations(); }}
             disabled={loading || smartLoading}
+            className="h-8 w-8 p-0 flex-shrink-0"
           >
-            <RefreshCw className={`w-4 h-4 ${(loading || smartLoading) ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3 h-3 sm:w-4 sm:h-4 ${(loading || smartLoading) ? 'animate-spin' : ''}`} />
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6 space-y-3 sm:space-y-4">
         {/* A) Continue Exam */}
-        <div className="p-4 rounded-lg border border-border/50 bg-card hover:bg-accent/5 transition-colors">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center flex-shrink-0">
-              <Clock className="w-5 h-5 text-orange-500" />
+        <div className="p-3 sm:p-4 rounded-lg border border-border/50 bg-card hover:bg-accent/5 transition-colors">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-foreground mb-1">Bài thi đang làm dở</h4>
+              <h4 className="font-medium text-foreground mb-1 text-sm sm:text-base">Bài thi đang làm dở</h4>
               {inProgressSession ? (
                 <>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Bạn có 1 bài thi chưa hoàn thành ({inProgressSession.total} câu)
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">
+                    1 bài chưa hoàn thành ({inProgressSession.total} câu)
                   </p>
-                  <Button size="sm" onClick={handleContinueExam} className="gap-2">
-                    <Play className="w-4 h-4" />
-                    Tiếp tục làm bài
+                  <Button size="sm" onClick={handleContinueExam} className="gap-1 sm:gap-2 text-xs sm:text-sm h-8">
+                    <Play className="w-3 h-3 sm:w-4 sm:h-4" />
+                    Tiếp tục
                   </Button>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  Không có bài thi đang làm dở
+                <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1 sm:gap-2">
+                  <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
+                  Không có bài đang làm dở
                 </p>
               )}
             </div>
@@ -418,27 +419,27 @@ export const PracticeTodayWidget = () => {
         </div>
 
         {/* B) Review Wrong */}
-        <div className="p-4 rounded-lg border border-border/50 bg-card hover:bg-accent/5 transition-colors">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
-              <RotateCcw className="w-5 h-5 text-red-500" />
+        <div className="p-3 sm:p-4 rounded-lg border border-border/50 bg-card hover:bg-accent/5 transition-colors">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
+              <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-foreground mb-1">Ôn câu sai</h4>
+              <h4 className="font-medium text-foreground mb-1 text-sm sm:text-base">Ôn câu sai</h4>
               {wrongAnswers.count > 0 ? (
                 <>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Bạn có <Badge variant="destructive" className="mx-1">{wrongAnswers.count}</Badge> câu sai cần ôn lại
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">
+                    <Badge variant="destructive" className="mr-1 text-[10px] sm:text-xs">{wrongAnswers.count}</Badge> câu sai cần ôn
                   </p>
-                  <Button size="sm" variant="outline" onClick={handleReviewWrong} className="gap-2">
-                    <RotateCcw className="w-4 h-4" />
+                  <Button size="sm" variant="outline" onClick={handleReviewWrong} className="gap-1 sm:gap-2 text-xs sm:text-sm h-8">
+                    <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4" />
                     Ôn ngay
                   </Button>
                 </>
               ) : (
-                <p className="text-sm text-muted-foreground flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  Bạn chưa có câu sai để ôn
+                <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1 sm:gap-2">
+                  <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-green-500 flex-shrink-0" />
+                  Chưa có câu sai
                 </p>
               )}
             </div>
@@ -446,33 +447,33 @@ export const PracticeTodayWidget = () => {
         </div>
 
         {/* C) Quick Practice */}
-        <div className="p-4 rounded-lg border border-border/50 bg-card hover:bg-accent/5 transition-colors">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Zap className="w-5 h-5 text-primary" />
+        <div className="p-3 sm:p-4 rounded-lg border border-border/50 bg-card hover:bg-accent/5 transition-colors">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-foreground mb-1">Luyện nhanh 10 câu</h4>
+              <h4 className="font-medium text-foreground mb-1 text-sm sm:text-base">Luyện nhanh 10 câu</h4>
               {lastPracticeSet ? (
                 <>
-                  <p className="text-sm text-muted-foreground mb-3 truncate">
-                    Bộ đề: {lastPracticeSet.title}
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3 truncate">
+                    {lastPracticeSet.title}
                   </p>
-                  <Button size="sm" variant="secondary" onClick={handleQuickPractice} className="gap-2">
-                    <Zap className="w-4 h-4" />
-                    Luyện nhanh 10 câu
+                  <Button size="sm" variant="secondary" onClick={handleQuickPractice} className="gap-1 sm:gap-2 text-xs sm:text-sm h-8">
+                    <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
+                    Luyện ngay
                   </Button>
                 </>
               ) : (
                 <div>
-                  <p className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-yellow-500" />
-                    Chưa có bộ đề nào
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3 flex items-center gap-1 sm:gap-2">
+                    <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-500 flex-shrink-0" />
+                    Chưa có bộ đề
                   </p>
                   <Link to="/practice">
-                    <Button size="sm" variant="outline" className="gap-2">
-                      <BookOpen className="w-4 h-4" />
-                      Khám phá bộ đề
+                    <Button size="sm" variant="outline" className="gap-1 sm:gap-2 text-xs sm:text-sm h-8">
+                      <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
+                      Khám phá
                     </Button>
                   </Link>
                 </div>
@@ -482,16 +483,16 @@ export const PracticeTodayWidget = () => {
         </div>
 
         {/* D) Smart Recommendations */}
-        <div className="pt-4 border-t border-border/50">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-primary" />
-              <h4 className="font-medium text-foreground">Gợi ý học tập thông minh</h4>
+        <div className="pt-3 sm:pt-4 border-t border-border/50">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+              <h4 className="font-medium text-foreground text-sm sm:text-base truncate">Gợi ý thông minh</h4>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               {lastUpdated && (
-                <span className="text-xs text-muted-foreground">
-                  Cập nhật {formatDistanceToNow(new Date(lastUpdated), { addSuffix: true, locale: vi })}
+                <span className="text-[10px] sm:text-xs text-muted-foreground hidden sm:inline">
+                  {formatDistanceToNow(new Date(lastUpdated), { addSuffix: true, locale: vi })}
                 </span>
               )}
               <Button 
@@ -502,20 +503,20 @@ export const PracticeTodayWidget = () => {
                 className="h-7 w-7 p-0"
                 title="Làm mới gợi ý"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${smartLoading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${smartLoading ? 'animate-spin' : ''}`} />
               </Button>
             </div>
           </div>
           
           {smartLoading ? (
-            <div className="flex items-center justify-center py-6">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
-              <span className="ml-2 text-sm text-muted-foreground">Đang phân tích...</span>
+            <div className="flex items-center justify-center py-4 sm:py-6">
+              <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 animate-spin text-primary" />
+              <span className="ml-2 text-xs sm:text-sm text-muted-foreground">Đang phân tích...</span>
             </div>
           ) : smartData ? (
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {/* Summary */}
-              <div className="p-3 bg-primary/5 rounded-lg text-sm">
+              <div className="p-2 sm:p-3 bg-primary/5 rounded-lg text-xs sm:text-sm">
                 {smartData.summary}
               </div>
               
@@ -523,27 +524,27 @@ export const PracticeTodayWidget = () => {
               {smartData.recommendations.slice(0, 3).map((rec, i) => (
                 <div 
                   key={i}
-                  className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-accent/5 cursor-pointer transition-colors"
+                  className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg border border-border/50 hover:bg-accent/5 cursor-pointer transition-colors"
                   onClick={() => handleRecommendationClick(rec)}
                 >
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
                     {getTypeIcon(rec.type)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">{rec.title}</p>
-                    <p className="text-xs text-muted-foreground truncate">{rec.description}</p>
+                    <p className="font-medium text-xs sm:text-sm truncate">{rec.title}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{rec.description}</p>
                   </div>
-                  <Badge variant="outline" className={getPriorityColor(rec.priority)}>
+                  <Badge variant="outline" className={`${getPriorityColor(rec.priority)} text-[9px] sm:text-xs hidden xs:inline-flex`}>
                     {rec.priority === 'high' ? 'Ưu tiên' : rec.priority === 'medium' ? 'Nên làm' : 'Tùy chọn'}
                   </Badge>
-                  <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                  <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground flex-shrink-0" />
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground">Chưa có dữ liệu gợi ý</p>
-              <Button variant="ghost" size="sm" className="mt-2" onClick={generateNewRecommendations}>
+            <div className="text-center py-3 sm:py-4">
+              <p className="text-xs sm:text-sm text-muted-foreground">Chưa có dữ liệu gợi ý</p>
+              <Button variant="ghost" size="sm" className="mt-2 text-xs h-8" onClick={generateNewRecommendations}>
                 Tạo gợi ý
               </Button>
             </div>
