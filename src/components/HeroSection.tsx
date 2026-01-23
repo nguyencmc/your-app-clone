@@ -1,107 +1,73 @@
-import { GraduationCap, ArrowRight, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Play, Sparkles } from "lucide-react";
+import heroLaptop from "@/assets/hero-laptop.png";
 
-const HeroSection = () => {
+export const HeroSection = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden">
-      {/* Aurora background effect - enhanced purple glow */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-b from-purple-500/30 via-purple-600/20 to-transparent blur-3xl opacity-60" />
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-gradient-to-b from-violet-500/25 to-transparent blur-2xl opacity-50" />
-      </div>
-      <div className="aurora-glow" />
-      
-      {/* Floating document cards */}
-      <div className="floating-card left-[5%] top-1/4 w-24 h-16 flex items-center gap-2 px-3 animate-float opacity-60">
-        <FileText className="w-5 h-5 text-muted-foreground" />
-        <div className="flex-1 space-y-1">
-          <div className="h-2 bg-muted rounded w-full" />
-          <div className="h-2 bg-muted rounded w-3/4" />
-        </div>
-      </div>
-      
-      <div className="floating-card right-[5%] top-1/4 w-24 h-16 flex items-center gap-2 px-3 animate-float-delayed opacity-60">
-        <FileText className="w-5 h-5 text-muted-foreground" />
-        <div className="flex-1 space-y-1">
-          <div className="h-2 bg-muted rounded w-full" />
-          <div className="h-2 bg-muted rounded w-3/4" />
-        </div>
-      </div>
-      
-      <div className="floating-card left-[10%] bottom-1/3 w-24 h-16 flex items-center gap-2 px-3 animate-float-delayed opacity-40">
-        <FileText className="w-5 h-5 text-muted-foreground" />
-        <div className="flex-1 space-y-1">
-          <div className="h-2 bg-muted rounded w-full" />
-          <div className="h-2 bg-muted rounded w-2/3" />
-        </div>
-      </div>
-      
-      <div className="floating-card right-[10%] bottom-1/3 w-24 h-16 flex items-center gap-2 px-3 animate-float opacity-40">
-        <FileText className="w-5 h-5 text-muted-foreground" />
-        <div className="flex-1 space-y-1">
-          <div className="h-2 bg-muted rounded w-full" />
-          <div className="h-2 bg-muted rounded w-2/3" />
-        </div>
-      </div>
-
-      <div className="container mx-auto px-4 text-center relative z-10">
-        {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-glow">
-            <GraduationCap className="w-7 h-7 text-primary-foreground" />
+    <section className="relative overflow-hidden bg-background pt-8 pb-32 lg:pt-16 lg:pb-48">
+      <div className="container mx-auto px-4 lg:px-8">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* Left Content */}
+          <div className="max-w-xl animate-slide-up">
+            <p className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+              Chào mừng đến với AI-Exam.cloud
+            </p>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">
+              <span className="text-gradient">Luyện thi</span>
+              <br />
+              <span className="text-foreground">Thông minh với</span>
+              <br />
+              <span className="text-foreground">AI!</span>
+            </h1>
+            <p className="text-lg text-muted-foreground leading-relaxed mb-8">
+              AI-Exam.cloud – Nền tảng luyện thi trực tuyến thông minh! Cung cấp đề thi đa dạng, flashcard tương tác, podcast học tập và nhiều công cụ học tập hiệu quả với sự hỗ trợ của AI.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <Button size="lg" className="shadow-button gap-2 text-base">
+                <Sparkles className="h-5 w-5" />
+                Bắt đầu ngay
+              </Button>
+              <Button size="lg" variant="outline" className="gap-2 text-base">
+                <Play className="h-5 w-5" />
+                Xem video
+              </Button>
+            </div>
           </div>
-          <span className="text-3xl font-bold text-gradient">ExamAi</span>
-        </div>
 
-        {/* Headline */}
-        <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-8 max-w-4xl mx-auto leading-tight">
-          AI Grading for Schools
-        </h1>
-
-        {/* Live users badge */}
-        <div className="inline-flex items-center gap-4 glass-card px-5 py-3 mb-8">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-            </span>
-            <span className="text-sm font-medium text-green-400">LIVE</span>
-          </div>
-          
-          <div className="flex -space-x-2">
-            {[45, 46, 47, 48].map((seed) => (
+          {/* Right Content - Laptop Image */}
+          <div className="relative animate-fade-in" style={{ animationDelay: "0.3s" }}>
+            <div className="relative z-10 animate-float">
               <img
-                key={seed}
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`}
-                alt="User"
-                className="w-8 h-8 rounded-full border-2 border-background"
+                src={heroLaptop}
+                alt="The Best Study Platform"
+                className="w-full max-w-2xl mx-auto drop-shadow-2xl"
+                width={1024}
+                height={768}
+                fetchPriority="high"
               />
-            ))}
+            </div>
+            {/* Decorative elements */}
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
+            <div className="absolute -bottom-10 -left-10 w-60 h-60 bg-accent/10 rounded-full blur-3xl" />
           </div>
-          
-          <div className="text-left">
-            <div className="text-lg font-bold text-foreground">50,000+</div>
-            <div className="text-xs text-muted-foreground">Users active in the last 24h</div>
-          </div>
-          
-          <ArrowRight className="w-4 h-4 text-muted-foreground" />
         </div>
+      </div>
 
-        {/* Subtitle */}
-        <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-          AI-powered lesson planning, assessments, and grading.
-          <br />
-          So you can focus on teaching.
-        </p>
-
-        {/* CTA Button */}
-        <Button variant="hero" size="xl" className="group">
-          Start for Free
-          <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-        </Button>
+      {/* Wave SVG */}
+      <div className="absolute bottom-0 left-0 right-0">
+        <svg
+          viewBox="0 0 1440 200"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full h-auto"
+          preserveAspectRatio="none"
+        >
+          <path
+            d="M0 80C240 160 480 200 720 180C960 160 1200 80 1440 100V200H0V80Z"
+            fill="hsl(var(--primary))"
+          />
+        </svg>
       </div>
     </section>
   );
 };
-
-export default HeroSection;
